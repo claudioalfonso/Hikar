@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <EditTextPreference android:key="prefCameraHeight"
+        android:defaultValue="1.4"
+        android:title="Camera height"
+        android:summary="Height in metres of the camera above ground."
+        android:inputType="numberDecimal" />
+
+    <CheckBoxPreference android:key="autoStart"
+        android:defaultValue="true"
+        android:title="Automatically download data"
+        android:summary="Automatically start downloading data when application starts." />
+
+    <ListPreference android:key="prefDEM"
+        android:title="Height source"
+        android:summary="Source of height data, OSGB or SRTM"
+        android:entries="@array/demKeys"
+        android:entryValues="@array/demValues" />
+
+    <EditTextPreference android:key="prefDisplayProjection"
+        android:defaultValue="27700"
+        android:title="Display projection"
+        android:summary="SRID for display projection e.g. 27700 (OSGB) or 3857 (Google)"
+        android:inputType="number" />
+
+    <EditTextPreference android:key="prefLfpUrl"
+        android:defaultValue="http://www.free-map.org.uk/downloads/lfp/"
+        android:title="LandForm PANORAMA directory URL"
+        android:summary="URL of web directory holding LandForm PANORAMA files" />
+
+    <EditTextPreference android:key="prefSrtmUrl"
+        android:defaultValue="http://www.free-map.org.uk/ws/"
+        android:title="SRTM web service directory URL"
+        android:summary="URL of web directory containing web service serving SRTM data" />
+
+    <EditTextPreference android:key="prefOsmUrl"
+        android:defaultValue="http://www.free-map.org.uk/0.6/ws/"
+        android:title="OSM GeoJSON web service directory URL"
+        android:summary="URL of web directory containing web service serving GeoJSON OSM data" />
+
+</PreferenceScreen>
