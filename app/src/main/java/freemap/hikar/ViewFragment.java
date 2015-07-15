@@ -21,7 +21,7 @@ import android.os.AsyncTask;
 import java.util.HashMap;
 import freemap.datasource.Tile;
 import freemap.data.Projection;
-import freemap.andromaps.DialogUtils;
+import freemap.datasource.OSMTiles;
 import java.lang.ref.WeakReference;
 import java.io.IOException;
 import freemap.routing.CountyManager;
@@ -111,7 +111,7 @@ public class ViewFragment extends Fragment
         jManager = new JunctionManager();
         cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
                                         "/hikar/countyData");
-        cTracker = new CountyTracker(cManager);
+
 
     }
 
@@ -298,6 +298,7 @@ public class ViewFragment extends Fragment
         {
 
             glView.getRenderer().setRenderData(data);
+            jManager.setDataset(new OSMTiles(data.osm));
         }
         else if (data==null)
             DialogUtils.showDialog(this.getActivity(), "Warning - received data is null!");
