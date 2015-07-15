@@ -23,7 +23,7 @@ dependencies {
    compile files('libs/freemaplib_proj.jar')
     compile files ('libs/graphhopper-0.5-SNAPSHOT-android.jar')
    // compile 'com.android.support:appcompat-v7:22.0.0'
-    compile (name: 'andromaps-release', ext: 'aar')
+    compile (name: 'Andromaps-debug', ext: 'aar')
 }
 
 // this will include the *.aar files as long as they are in "libs"

@@ -85,7 +85,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 15 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="andromaps-release-" level="project" />
+    <orderEntry type="library" exported="" name="Andromaps-debug-" level="project" />
     <orderEntry type="library" exported="" name="freemaplib_proj" level="project" />
     <orderEntry type="library" exported="" name="graphhopper-0.5-SNAPSHOT-android" level="project" />
   </component>
