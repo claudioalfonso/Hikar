@@ -21,6 +21,8 @@ android {
 
 dependencies {
    compile files('libs/freemaplib_proj.jar')
+    compile files ('libs/jcoord-1.0.jar')
+    compile files ('libs/javaproj-1.0.6-noawt.jar')
     compile files ('libs/graphhopper-0.5-SNAPSHOT-android.jar')
    // compile 'com.android.support:appcompat-v7:22.0.0'
     compile (name: 'Andromaps-debug', ext: 'aar')

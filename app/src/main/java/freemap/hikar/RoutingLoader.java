@@ -25,6 +25,7 @@ import com.graphhopper.routing.AlgorithmOptions;
 import com.graphhopper.util.PointList;
 import com.graphhopper.routing.util.EncodingManager;
 import freemap.andromaps.HTTPCommunicationTask;
+import freemap.andromaps.ConfigChangeSafeTask;
 
 public class RoutingLoader implements HTTPCommunicationTask.Callback {
 
@@ -34,7 +35,7 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
 
     public interface Callback
     {
-        public void routeLoaded(GraphHopper gh);
+        public void graphLoaded(GraphHopper gh);
         public void showText(String text);
     }
 
@@ -61,12 +62,12 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
         }
 
         public void loadGH(String county) {
-            AsyncTask<String, Void, Boolean> task = new AsyncTask<String, Void, Boolean>() {
+            ConfigChangeSafeTask<String, Void> task = new ConfigChangeSafeTask<String, Void>(ctx) {
 
                 GraphHopper gh;
                 String error;
 
-                public Boolean doInBackground(String... filename) {
+                public String doInBackground(String... filename) {
 
                     try {
                         gh = new GraphHopper().forMobile();
@@ -75,21 +76,20 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
 
                     } catch (Exception e) {
                         error = e.toString();
-                        return false;
+                        return error;
                     }
-                    return true;
+                    return "OK";
                 }
 
-                public void onPostExecute(Boolean status) {
-                    if (status) {
+                public void onPostExecute(String status) {
+                    super.onPostExecute(status);
+                    if (status.equals("OK")) {
                         RoutingLoader.this.gh = gh;
-                        rmCallback.routeLoaded(gh);
-                    } else
-                        rmCallback.showText(error);
-
+                        rmCallback.graphLoaded(gh);
+                    }
                 }
             };
-            rmCallback.showText("Loading graph");
+            task.setDialogDetails("Loading", "Loading routing for " + county);
             task.execute(Environment.getExternalStorageDirectory().getAbsolutePath() +
                     "/gh/"+county+".osm-gh");
         }

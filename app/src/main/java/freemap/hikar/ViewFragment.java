@@ -30,6 +30,10 @@ import freemap.routing.CountyTracker;
 import freemap.routing.JunctionManager;
 import freemap.andromaps.ConfigChangeSafeTask;
 
+import android.widget.TextView;
+import java.util.ArrayList;
+import freemap.data.Way;
+
 
 
 public class ViewFragment extends Fragment
@@ -82,10 +86,10 @@ public class ViewFragment extends Fragment
     JunctionManager jManager;
     SignpostManager sManager;
     CountyManager cManager;
-    County curCounty;
+
     CountyTracker cTracker;
-
-
+    boolean loadingCounty;
+    String curHeading, curDetails;
 
 
     public interface HUDProvider
@@ -108,10 +112,11 @@ public class ViewFragment extends Fragment
         lastLon = -181;
         lastLat = -91;
 
-        jManager = new JunctionManager();
+        jManager = new JunctionManager(20);
         cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
                                         "/hikar/countyData");
-
+        curHeading = "";
+        curDetails = "";
 
     }
 
@@ -122,21 +127,40 @@ public class ViewFragment extends Fragment
         // We don't do any reprojection on RenderedWays if the display projection and tiling projection
         // are the same
 
-        glView = new OpenGLView(activity, hfovHandler);
+       // glView = new OpenGLView(activity, hfovHandler);
         sensorInput.attach(activity);
         locationProcessor = new LocationProcessor(activity,this,5000,10);
-        glView.setOnTouchListener(new PinchListener(this));
+     //   glView.setOnTouchListener(new PinchListener(this));
 
         if(integrator!=null)
         {
             HashMap<String, Tile> data = integrator.getCurrentOSMTiles();
             HashMap<String, Tile> dem = integrator.getCurrentDEMTiles();
 
-            if(data!=null && dem!=null)
-                glView.getRenderer().setRenderData(new DownloadDataTask.ReceivedData(data, dem));
+            if(data!=null && dem!=null) {
+                //    glView.getRenderer().setRenderData(new DownloadDataTask.ReceivedData(data, dem);
+            }
         }
-        sManager = new SignpostManager(activity);
-        ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(activity)
+
+    }
+
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+    }
+
+    public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState)
+    {
+        return inflater.inflate(R.layout.routetester, parent);
+        //return glView;
+    }
+
+    public void onActivityCreated(Bundle savedInstanceState)
+    {
+        super.onActivityCreated(savedInstanceState);
+        sManager = new SignpostManager(getActivity(), this);
+        ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(getActivity())
         {
             public String doInBackground(Void... unused)
             {
@@ -165,21 +189,10 @@ public class ViewFragment extends Fragment
         countyLoaderTask.execute();
     }
 
-    public void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-
-    }
-
-    public View onCreateView(LayoutInflater inflater, ViewGroup group, Bundle savedInstanceState)
-    {
-        return glView;
-    }
-
     public void onResume() {
         super.onResume();
         locationProcessor.startUpdates();
-        glView.getRenderer().onResume();
+      //  glView.getRenderer().onResume();
 
         sensorInput.start();
     }
@@ -188,7 +201,7 @@ public class ViewFragment extends Fragment
         super.onPause();
         locationProcessor.stopUpdates();
         sensorInput.stop();
-        glView.getRenderer().onPause();
+     //   glView.getRenderer().onPause();
     }
 
     public void onDetach() {
@@ -212,7 +225,7 @@ public class ViewFragment extends Fragment
         else
         {
             integrator = null;
-            glView.getRenderer().deactivate();
+         //   glView.getRenderer().deactivate();
         }
         activated = activate;
     }
@@ -254,7 +267,7 @@ public class ViewFragment extends Fragment
             locDisplayProj = trans.getDisplayProj().project(p);
 
             Log.d("hikar","location in display projection=" + locDisplayProj);
-            glView.getRenderer().setCameraLocation(p);
+         //   glView.getRenderer().setCameraLocation(p);
 
             ((HUDProvider)getActivity()).getHUD().setHeight((float)height);
             ((HUDProvider)getActivity()).getHUD().invalidate();
@@ -267,25 +280,62 @@ public class ViewFragment extends Fragment
                 downloadDataTask.execute(p);
             }
 
-            new AsyncTask<Point,Void,String>()
-            {
-                public String doInBackground(Point... pt)
-                {
-                    // CountyTracker will be null if error loading the counties or not loaded yet
-                    if(cTracker!=null)
-                        cTracker.update(pt[0]);
-                    Point junction = jManager.getJunction(pt[0]);
-                    if(junction!=null)
-                        sManager.onJunction(junction);
 
-                    return "OK";
-                }
+            new AsyncTask<Point, Void, Point>() {
+                    public Point doInBackground(Point... pt) {
+                        Point junction = null;
 
-                public void onPostExecute(String msg)
-                {
-                    DialogUtils.showDialog(getActivity(), msg);
-                }
+                        try
+                        {
+                            loadingCounty = true;
+
+
+                            if (jManager.hasDataset()) {
+                                junction = jManager.getJunction(pt[0]);
+                                if (junction != null && sManager.hasDataset()) {
+                                    sManager.onJunction(junction);
+                                }
+                                else
+                                    indirectSetText("Can't call onJunction()", "Junction: " +
+                                            junction + " sManager has dataset?" + sManager.hasDataset());
+
+                            }
+                            else
+                            {
+                                indirectSetText("Can't call onJunction()", "jManager.hasDataset() returned false");
+                            }
+                        }
+                        catch(Exception e) {indirectSetText("Exception: ", "ViewFragment/Junction AsyncTask" +
+                                    e.toString()); }
+                        return junction;
+                    }
+
+                    public void onPostExecute(Point junction) {
+                        showIndirectText();
+                        if (junction != null) {
+                            ArrayList<Way> jWays = jManager.getStoredWays();
+                            String details = "";
+                            for (int i = 0; i < jWays.size(); i++) {
+                                details +=
+                                        (i == 0 ? "" : ",") + (jWays.get(i).getValue("name") == null ?
+                                                jWays.get(i).getId() : jWays.get(i).getValue("name"))
+                                                + "(" + jWays.get(i).getValue("highway") + ")";
+                            }
+
+                            DialogUtils.showDialog(getActivity(), junction.toString() + ":" + details +
+                                                " onJunction() call time: "+ sManager.callTime);
+                        }
+
+                        loadingCounty = false;
+                    }
             }.execute(p);
+
+            // CountyTracker will be null if error loading the counties or not loaded yet
+            // This shouldn't go in an AsyncTask as it creates one itself to load the graph
+            if (cTracker != null)
+            {
+                cTracker.update(p);
+            }
         }
     }
 
@@ -294,11 +344,15 @@ public class ViewFragment extends Fragment
     public void receiveData(DownloadDataTask.ReceivedData data, boolean sourceGPS)
     {
         Log.d("hikar", "received data");
+        DialogUtils.showDialog(getActivity(), "Data received");
+
         if (data!=null && sourceGPS) // only show data if it's a gps location, not a manual entry
         {
-
-            glView.getRenderer().setRenderData(data);
+       //     glView.getRenderer().setRenderData(data);
             jManager.setDataset(new OSMTiles(data.osm));
+            sManager.setDataset(new OSMTiles(data.osm));
+
+
         }
         else if (data==null)
             DialogUtils.showDialog(this.getActivity(), "Warning - received data is null!");
@@ -313,7 +367,7 @@ public class ViewFragment extends Fragment
             double height = integrator.getHeight(new Point(lastLon, lastLat));
             ((HUDProvider)getActivity()).getHUD().setHeight((float)height);
             ((HUDProvider)getActivity()).getHUD().invalidate();
-            glView.getRenderer().setHeight(height);
+        //    glView.getRenderer().setHeight(height);
         }
     }
 
@@ -323,11 +377,11 @@ public class ViewFragment extends Fragment
 
         float magNorth = field==null ? 0.0f : field.getDeclination(),
                 actualAdjustment = magNorth + orientationAdjustment;
-        Matrix.rotateM (glR, 0, actualAdjustment, 0.0f, 0.0f, 1.0f);
+        Matrix.rotateM(glR, 0, actualAdjustment, 0.0f, 0.0f, 1.0f);
 
         SensorManager.getOrientation(glR, orientation);
 
-        glView.getRenderer().setOrientMtx(glR);
+      //  glView.getRenderer().setOrientMtx(glR);
         ((HUDProvider)getActivity()).getHUD().setOrientation(orientation);
         ((HUDProvider)getActivity()).getHUD().invalidate();
     }
@@ -340,7 +394,7 @@ public class ViewFragment extends Fragment
 
     public void onPinchOut()
     {
-        glView.getRenderer().changeHFOV(-5.0f);
+       // glView.getRenderer().changeHFOV(-5.0f);
 
     }
 
@@ -355,13 +409,14 @@ public class ViewFragment extends Fragment
 
     public void toggleCalibrate()
     {
-        glView.getRenderer().toggleCalibrate();
+
+        //glView.getRenderer().toggleCalibrate();
     }
 
     public void setCameraHeight(float cameraHeight)
     {
         android.util.Log.d("hikar","camera height=" + cameraHeight);
-        glView.getRenderer().setCameraHeight(cameraHeight);
+       // glView.getRenderer().setCameraHeight(cameraHeight);
     }
 
     public void visit(RenderedWay rw)
@@ -390,7 +445,7 @@ public class ViewFragment extends Fragment
         {
 
             trans.setDisplayProj(proj);
-            glView.getRenderer().setProjectionTransformation (trans);
+           // glView.getRenderer().setProjectionTransformation (trans);
             return true;
         }
         return false;
@@ -413,5 +468,25 @@ public class ViewFragment extends Fragment
     public float getOrientationAdjustment()
     {
         return orientationAdjustment;
+    }
+
+    public void setText (String heading, String details)
+    {
+        ((TextView)getActivity().findViewById(R.id.heading)).setText(heading);
+        ((TextView)getActivity().findViewById(R.id.content)).setText(details);
+    }
+
+
+    public void indirectSetText (String heading, String details)
+    {
+        curHeading = heading;
+        curDetails = details +"@" + System.currentTimeMillis()/1000;
+    }
+
+    public void showIndirectText()
+    {
+            setText(curHeading, curDetails +", showIndirectText() called@" + System.currentTimeMillis()/1000);
+
+
     }
 }

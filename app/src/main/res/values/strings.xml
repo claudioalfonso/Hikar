@@ -10,4 +10,6 @@
     <string name="latitude">Latitude</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="defaultHeadingText">Heading</string>
+    <string name="defaultContentText">Content</string>
 </resources>

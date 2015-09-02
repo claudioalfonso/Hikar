@@ -61,6 +61,7 @@ public class OsmDemIntegrator {
 		                                                        tileHeights[demType]);
         formatter.setScript("bsvr2.php");
         formatter.selectWays("highway");
+		formatter.selectPOIs("place,amenity,natural");
         formatter.addKeyval("inUnits", tileUnits[demType]); // used to tell server that bbox is in microdeg
         
         WebDataSource osmDataSource=new WebDataSource(osmUrl,formatter);

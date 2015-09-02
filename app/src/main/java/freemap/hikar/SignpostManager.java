@@ -18,7 +18,8 @@ package freemap.hikar;
 
 // 51.0070, -0.9410 to 50.9177, -1.3753
 
-import freemap.datasource.FreemapDataset;
+
+import freemap.data.Algorithms;
 import freemap.data.POI;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
@@ -27,13 +28,14 @@ import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 import java.util.ArrayList;
 import freemap.datasource.OSMTiles;
-import freemap.routing.Signpost;
-import freemap.routing.Arm;
-import freemap.routing.Destination;
 import freemap.routing.County;
 import freemap.routing.CountyTracker;
 
-public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Callback, FreemapDataset.POIVisitor,
+
+import java.text.DecimalFormat;
+import freemap.andromaps.DialogUtils;
+
+public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Callback,
                                         CountyTracker.CountyChangeListener
 {
     OSMTiles pois;
@@ -45,13 +47,20 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     ArrayList<Signpost> signposts;
     Signpost curSignpost;
     ArrayList<Point> pendingJunctions; // pending junctions in case county being loaded
+    ViewFragment vf;
+    OSMTiles.POIIterator poiIterator;
+    String routingDetails;
+    DecimalFormat df;
+    public long callTime;
 
-    public SignpostManager(Context ctx)
+    public SignpostManager(Context ctx, ViewFragment vf)
     {
         this.ctx = ctx;
         loader = new RoutingLoader(ctx, this);
         signposts = new ArrayList<Signpost>();
         pendingJunctions = new ArrayList<Point>();
+        this.vf=vf;
+        df=new DecimalFormat("#.##");
     }
 
     public void setDataset(OSMTiles pois)
@@ -64,50 +73,101 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
         gh = null; // to indicate we're loading a county
         pendingJunctions.clear(); // clear any pending junctions for old county
         loader.downloadOrLoad(county.getName());
+
     }
 
     public void onJunction (Point loc)
     {
         // Only try and create new signpost if we're not loading a new county
+        try {
 
-        if(gh!=null)
-        {
-            curLoc = loc;
+            callTime = System.currentTimeMillis()/1000;
+            routingDetails = "onJunction():";
+            if (gh != null) {
+                curLoc = loc;
+                curSignpost = null;
 
-            for (Signpost s : signposts) {
-                if (s.distanceTo(loc) < 50.0) {
-                    curSignpost = s;
-                    break;
+                for (Signpost s : signposts) {
+                    if (s.distanceTo(loc) < 50.0) {
+                        curSignpost = s;
+                        routingDetails = " FOUND SIGNPOST: " + s;
+                        break;
+                    }
                 }
+
+                poiIterator = pois.poiIterator();
+
+                if (curSignpost == null) {
+                    curSignpost = new Signpost(loc);
+                    signposts.add(curSignpost);
+                    routingDetails += "NEW SIGNPOST: " + curSignpost;
+
+
+
+
+                    routingDetails += " calling nextPOI()...";
+                    vf.indirectSetText("Routing to POIs (begin)", routingDetails);
+                    nextPOI();
+                }
+            } else // otherwise add it to pending junction list
+            {
+                routingDetails += " Pending: " + curLoc;
+                pendingJunctions.add(curLoc);
+
+                vf.indirectSetText("onJunction()", routingDetails);
             }
 
-            if (curSignpost == null) {
-                curSignpost = new Signpost(loc);
-                signposts.add(curSignpost);
-                pois.operateOnNearbyPOIs(this, loc, 5000.0);
-            }
         }
-        else // otherwise add it to pending junction list
-            pendingJunctions.add(curLoc);
+        catch(Exception e)
+        {
+            vf.indirectSetText("SignpostManager/onJunction() Exception", e.toString());
+        }
+
     }
 
-    public void visit (POI poi)
+    public void nextPOI()
     {
-        if(poi==null)
-        {
-            // Runs when we've found all the pois
+        boolean doCalcPath=false;
+        POI p = (POI)poiIterator.next();
+        routingDetails += " nextPOI():";
+        while(p!=null && doCalcPath==false) {
+
+            Point pt = p.getUnprojectedPoint();
+
+            if((p.containsKey("amenity") && p.getValue("amenity").equals("pub")) ||
+                    p.containsKey("place") ||
+                    (p.containsKey("natural") && p.getValue("natural").equals("peak"))) {
+
+                double dist = Algorithms.haversineDist(pt.x, pt.y, curLoc.x, curLoc.y);
+
+                if(p.getValue("name")!=null)
+                    routingDetails += p.getValue("name") + "=" + df.format(dist) + ",";
+                if (Algorithms.haversineDist(pt.x, pt.y, curLoc.x, curLoc.y) <= 2000.0)
+                {
+                    doCalcPath=true;
+                }
+
+
+            }
+
+            if(!doCalcPath)
+                p = (POI)poiIterator.next();
+           // vf.indirectSetText("Routing to POIs (part)", routingDetails);
         }
-        else if((poi.containsKey("amenity") && poi.getValue("amenity").equals("pub")) ||
-                poi.containsKey("place") ||
-           (poi.containsKey("natural") && poi.getValue("natural").equals("peak")))
-        {
-            routerToPOI.calcPath(curLoc, poi);
-        }
+
+            if(doCalcPath)
+                routerToPOI.calcPath(curLoc, p);
+            else {
+                routingDetails += " poi is null... end of POIs";
+                vf.indirectSetText("Routing to POIs", routingDetails);
+            }
+
     }
 
-    public void routeLoaded(GraphHopper gh)
+    public void graphLoaded(GraphHopper gh)
     {
         this.gh = gh;
+        vf.setText("Loaded the graph", gh.toString());
         routerToPOI = new RouterToPOI(gh, this);
 
         // Process any junctions received while loading new county
@@ -124,9 +184,12 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     // poi is the POI we're routing to
     public void pathCalculated(GHResponse response, POI poi)
     {
+
+
         // find the bearing of the first stage of the route and the total distance
         double d = response.getDistance();
 
+        routingDetails += "Dist to: " + poi.toString() + "=" + response.getInstructions().toString();
         if(response.getPoints().size() >= 2) {
             double nextLat = response.getPoints().getLat(1),
                     nextLon = response.getPoints().getLon(1);
@@ -141,6 +204,11 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
             }
             arm.addDestination (new Destination (poi,d));
         }
+        nextPOI();
     }
 
+    public boolean hasDataset()
+    {
+        return pois!=null;
+    }
 }
