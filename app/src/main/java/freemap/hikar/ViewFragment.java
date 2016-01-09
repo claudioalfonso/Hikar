@@ -16,23 +16,28 @@ import android.util.Log;
 import android.hardware.GeomagneticField;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Environment;
-import android.os.AsyncTask;
+
 import java.util.HashMap;
 import freemap.datasource.Tile;
 import freemap.data.Projection;
-import freemap.datasource.OSMTiles;
+
 import java.lang.ref.WeakReference;
+
+
+import android.widget.TextView;
+
+/* 090116 imports related to signposts - comment out for the moment
+import java.util.ArrayList;
+import freemap.data.Way;
 import java.io.IOException;
 import freemap.routing.CountyManager;
-import freemap.routing.County;
 import freemap.routing.CountyTracker;
 import freemap.routing.JunctionManager;
 import freemap.andromaps.ConfigChangeSafeTask;
-
-import android.widget.TextView;
-import java.util.ArrayList;
-import freemap.data.Way;
+import freemap.datasource.OSMTiles;
+import android.os.Environment;F
+import android.os.AsyncTask;
+*/
 
 
 
@@ -83,12 +88,14 @@ public class ViewFragment extends Fragment
     boolean receivedLocation;
     HFOVHandler hfovHandler;
 
+    /* 090116 comment out for the moment
     JunctionManager jManager;
     SignpostManager sManager;
     CountyManager cManager;
 
     CountyTracker cTracker;
     boolean loadingCounty;
+    */
     String curHeading, curDetails;
 
 
@@ -112,9 +119,12 @@ public class ViewFragment extends Fragment
         lastLon = -181;
         lastLat = -91;
 
+        /* 090116 comment out for the moment
         jManager = new JunctionManager(20);
         cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
                                         "/hikar/countyData");
+        */
+
         curHeading = "";
         curDetails = "";
 
@@ -127,10 +137,10 @@ public class ViewFragment extends Fragment
         // We don't do any reprojection on RenderedWays if the display projection and tiling projection
         // are the same
 
-       // glView = new OpenGLView(activity, hfovHandler);
+        glView = new OpenGLView(activity, hfovHandler);
         sensorInput.attach(activity);
         locationProcessor = new LocationProcessor(activity,this,5000,10);
-     //   glView.setOnTouchListener(new PinchListener(this));
+        glView.setOnTouchListener(new PinchListener(this));
 
         if(integrator!=null)
         {
@@ -138,7 +148,7 @@ public class ViewFragment extends Fragment
             HashMap<String, Tile> dem = integrator.getCurrentDEMTiles();
 
             if(data!=null && dem!=null) {
-                //    glView.getRenderer().setRenderData(new DownloadDataTask.ReceivedData(data, dem);
+                glView.getRenderer().setRenderData(new DownloadDataTask.ReceivedData(data, dem));
             }
         }
 
@@ -152,21 +162,24 @@ public class ViewFragment extends Fragment
 
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState)
     {
-        return inflater.inflate(R.layout.routetester, parent);
-        //return glView;
+        // for routing/signposts
+        //return inflater.inflate(R.layout.routetester, parent);
+        return glView;
     }
 
     public void onActivityCreated(Bundle savedInstanceState)
     {
         super.onActivityCreated(savedInstanceState);
+        /* 090116 out for the moment
         sManager = new SignpostManager(getActivity(), this);
+
         ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(getActivity())
         {
             public String doInBackground(Void... unused)
             {
                 try
                 {
-                    cManager.downloadOrLoad("http://download.geofabrik.de/europe/great-britain/england/");
+
                     return "OK";
                 }
                 catch(IOException e)
@@ -180,19 +193,22 @@ public class ViewFragment extends Fragment
                 super.onPostExecute(result);
                 if(result.equals("OK"))
                 {
+
                     cTracker = new CountyTracker(cManager);
                     cTracker.addCountyChangeListener(sManager);
+
                 }
             }
         };
         countyLoaderTask.setDialogDetails("Loading...", "Loading county data...");
         countyLoaderTask.execute();
+        */
     }
 
     public void onResume() {
         super.onResume();
         locationProcessor.startUpdates();
-      //  glView.getRenderer().onResume();
+        glView.getRenderer().onResume();
 
         sensorInput.start();
     }
@@ -201,7 +217,7 @@ public class ViewFragment extends Fragment
         super.onPause();
         locationProcessor.stopUpdates();
         sensorInput.stop();
-     //   glView.getRenderer().onPause();
+        glView.getRenderer().onPause();
     }
 
     public void onDetach() {
@@ -225,7 +241,7 @@ public class ViewFragment extends Fragment
         else
         {
             integrator = null;
-         //   glView.getRenderer().deactivate();
+            glView.getRenderer().deactivate();
         }
         activated = activate;
     }
@@ -267,7 +283,7 @@ public class ViewFragment extends Fragment
             locDisplayProj = trans.getDisplayProj().project(p);
 
             Log.d("hikar","location in display projection=" + locDisplayProj);
-         //   glView.getRenderer().setCameraLocation(p);
+            glView.getRenderer().setCameraLocation(p);
 
             ((HUDProvider)getActivity()).getHUD().setHeight((float)height);
             ((HUDProvider)getActivity()).getHUD().invalidate();
@@ -280,7 +296,7 @@ public class ViewFragment extends Fragment
                 downloadDataTask.execute(p);
             }
 
-
+            /* 090116 comment out for the moment
             new AsyncTask<Point, Void, Point>() {
                     public Point doInBackground(Point... pt) {
                         Point junction = null;
@@ -336,6 +352,7 @@ public class ViewFragment extends Fragment
             {
                 cTracker.update(p);
             }
+             */
         }
     }
 
@@ -348,11 +365,11 @@ public class ViewFragment extends Fragment
 
         if (data!=null && sourceGPS) // only show data if it's a gps location, not a manual entry
         {
-       //     glView.getRenderer().setRenderData(data);
+            glView.getRenderer().setRenderData(data);
+            /* 090116 comment out for the moment
             jManager.setDataset(new OSMTiles(data.osm));
             sManager.setDataset(new OSMTiles(data.osm));
-
-
+            */
         }
         else if (data==null)
             DialogUtils.showDialog(this.getActivity(), "Warning - received data is null!");
@@ -367,7 +384,7 @@ public class ViewFragment extends Fragment
             double height = integrator.getHeight(new Point(lastLon, lastLat));
             ((HUDProvider)getActivity()).getHUD().setHeight((float)height);
             ((HUDProvider)getActivity()).getHUD().invalidate();
-        //    glView.getRenderer().setHeight(height);
+             glView.getRenderer().setHeight(height);
         }
     }
 
@@ -381,7 +398,7 @@ public class ViewFragment extends Fragment
 
         SensorManager.getOrientation(glR, orientation);
 
-      //  glView.getRenderer().setOrientMtx(glR);
+        glView.getRenderer().setOrientMtx(glR);
         ((HUDProvider)getActivity()).getHUD().setOrientation(orientation);
         ((HUDProvider)getActivity()).getHUD().invalidate();
     }
@@ -394,8 +411,7 @@ public class ViewFragment extends Fragment
 
     public void onPinchOut()
     {
-       // glView.getRenderer().changeHFOV(-5.0f);
-
+       glView.getRenderer().changeHFOV(-5.0f);
     }
 
     public void setHFOV(float hFov)
@@ -410,13 +426,13 @@ public class ViewFragment extends Fragment
     public void toggleCalibrate()
     {
 
-        //glView.getRenderer().toggleCalibrate();
+        glView.getRenderer().toggleCalibrate();
     }
 
     public void setCameraHeight(float cameraHeight)
     {
         android.util.Log.d("hikar","camera height=" + cameraHeight);
-       // glView.getRenderer().setCameraHeight(cameraHeight);
+        glView.getRenderer().setCameraHeight(cameraHeight);
     }
 
     public void visit(RenderedWay rw)
@@ -445,7 +461,7 @@ public class ViewFragment extends Fragment
         {
 
             trans.setDisplayProj(proj);
-           // glView.getRenderer().setProjectionTransformation (trans);
+            glView.getRenderer().setProjectionTransformation (trans);
             return true;
         }
         return false;
