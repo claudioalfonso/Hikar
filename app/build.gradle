@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 15
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
 
     defaultConfig {
         applicationId "freemap.hikar"
         minSdkVersion 15
-        targetSdkVersion 15
+        targetSdkVersion 22
         versionCode 1
-        versionName "1.0"
+        versionName "0.1"
     }
     buildTypes {
         release {
@@ -17,18 +17,23 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    lintOptions {
+        checkReleaseBuilds false
+    }
 }
 
 dependencies {
-   compile files('libs/freemaplib_proj.jar')
-    compile files ('libs/jcoord-1.0.jar')
-    compile files ('libs/javaproj-1.0.6-noawt.jar')
-    compile files ('libs/graphhopper-0.5-SNAPSHOT-android.jar')
-   // compile 'com.android.support:appcompat-v7:22.0.0'
-    compile (name: 'Andromaps-debug', ext: 'aar')
+    compile 'com.android.support:appcompat-v7:27.0.2'
+
+    compile 'freemap:freemaplib:20170509'
+    compile 'freemap:freemaplibProj:20131013'
+
+    compile project(":andromaps")
 }
 
 // this will include the *.aar files as long as they are in "libs"
+
 repositories{
     flatDir {
         dirs 'libs'

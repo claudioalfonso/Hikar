@@ -13,7 +13,6 @@ import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.location.LocationManager;
 
-
 public class Hikar extends Activity implements ViewFragment.HUDProvider
 {
     LocationProcessor locationProcessor;

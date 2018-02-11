@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Hikar.iml" filepath="$PROJECT_DIR$/Hikar.iml" />
+      <module fileurl="file://$PROJECT_DIR$/andromaps/andromaps.iml" filepath="$PROJECT_DIR$/andromaps/andromaps.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/hikar.iml" filepath="$PROJECT_DIR$/hikar.iml" />
     </modules>
   </component>
 </project>
-
