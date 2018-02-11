@@ -15,7 +15,6 @@ import android.location.LocationManager;
 
 public class Hikar extends Activity implements ViewFragment.HUDProvider
 {
-    LocationProcessor locationProcessor;
     ViewFragment viewFragment;
     HUD hud;
     boolean autoStart;

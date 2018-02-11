@@ -1,7 +1,6 @@
 package freemap.hikar;
 
 import freemap.data.Projection;
-//import freemap.datasource.CachedTileDeliverer;
 import freemap.datasource.WebDataSource;
 import freemap.jdem.DEMSource;
 import freemap.jdem.HGTDataInterpreter;
