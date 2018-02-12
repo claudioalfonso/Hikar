@@ -5,11 +5,9 @@
     <string name="menu_settings">Settings</string>
     <string name="menu_calibrate">Calibrate</string>
     <string name="menu_start">Start</string>
-    <string name="menu_location">Download data at given location</string>
-    <string name="longitude">Longitude</string>
-    <string name="latitude">Latitude</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Cancel</string>
-    <string name="defaultHeadingText">Heading</string>
-    <string name="defaultContentText">Content</string>
+	<string name="menu_location">Download data at given location</string>
+	<string name="longitude">Longitude</string>
+	<string name="latitude">Latitude</string>
+	<string name="ok">OK</string>
+	<string name="cancel">Cancel</string>
 </resources>

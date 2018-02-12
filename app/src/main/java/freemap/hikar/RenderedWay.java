@@ -1,7 +1,9 @@
 package freemap.hikar;
 
 import freemap.data.Point;
+import freemap.data.Projection;
 import freemap.data.Way;
+import freemap.data.IdentityProjection;
 
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;

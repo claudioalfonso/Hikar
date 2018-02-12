@@ -10,6 +10,7 @@ import freemap.data.Point;
 
 import android.opengl.GLES20;
 
+import android.util.Log;
 
 public class RenderedDEM {
 
