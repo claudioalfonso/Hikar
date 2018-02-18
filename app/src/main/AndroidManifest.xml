@@ -23,7 +23,8 @@
         <activity
             android:name="freemap.hikar.Hikar"
             android:label="@string/app_name"
-            android:screenOrientation="landscape" >
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,7 +37,7 @@
         <activity
             android:name="freemap.hikar.LocationEntryActivity"
             android:label="Enter location"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

@@ -2,16 +2,22 @@ package freemap.hikar;
 
 import freemap.andromaps.DataCallbackTask;
 import android.content.Context;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 import java.util.HashMap;
 import freemap.datasource.Tile;
 
 import freemap.datasource.FreemapDataset;
 
-public class DownloadDataTask extends DataCallbackTask<Point,Void> {
+public class DownloadDataTask extends AsyncTask<Point,String,Boolean> {
 
     OsmDemIntegrator integrator;
     boolean sourceGPS;
+
+
     
     public static class ReceivedData
     {
@@ -30,19 +36,30 @@ public class DownloadDataTask extends DataCallbackTask<Point,Void> {
     }
     
     Receiver receiver;
+    HUD hud;
+    ReceivedData data;
+    String errorMsg;
+    Context ctx;
     
-    public DownloadDataTask(Context ctx, Receiver receiver, OsmDemIntegrator integrator, boolean sourceGPS)
+    public DownloadDataTask(Context ctx, Receiver receiver, HUD hud, OsmDemIntegrator integrator, boolean sourceGPS)
     {
-        super(ctx);
+        this.ctx = ctx;
         this.receiver=receiver;
         this.integrator=integrator;
         this.sourceGPS = sourceGPS;
+        this.hud = hud;
+    }
+
+    public void onPreExecute() {
+        super.onPreExecute();
+        Log.d("hikar", "Loading data...");
+        hud.setMessage("Loading data...");
     }
     
-    public String doInBackground(Point... p)
+    public Boolean doInBackground(Point... p)
     {
         boolean status=false;
-        String msg="";
+        errorMsg = "";
         try
         {
            // msg += " p=" + p[0].x + "," + p[0].y + " ";
@@ -54,44 +71,54 @@ public class DownloadDataTask extends DataCallbackTask<Point,Void> {
                             integrator.getCurrentDEMTiles());
                 
                 int i=0;
-               // msg += " rd.nDems=" + rd.dem.size()+ " " + " nOsms=" + rd.osm.size() + ". ";
-                for(HashMap.Entry<String,Tile> e: rd.osm.entrySet())
-                {
-                    FreemapDataset ds = (FreemapDataset)e.getValue().data;
-                   // msg += ((i++)+" " +ds.nWays() + "w, ");
+                Log.d("hikar", "Loaded ok. rendering data");
+                publishProgress("Loaded ok. Rendering data...");
+                data = rd;
+                if(data==null) {
+                    errorMsg = "Data returned was null";
+                } else {
+                    status = true;
                 }
-                msg = "Downloaded OK";
-                setData(rd);
             }
-            else
-                   msg += " OSMDemIntegrator.update() returned false";
+
+            else {
+                errorMsg = "OSMDemIntegrator.update() returned false";
+            }
         }
         catch(java.io.IOException e)
         {
-            msg= e.toString();     
+            errorMsg = "Input/output error:" + e.toString();
         }
         catch(org.xml.sax.SAXException e)
         {
-            msg= e.toString();
+            errorMsg = "XML parse error:" + e.toString();
         }
         catch(org.json.JSONException e)
         {
             android.util.Log.e("hikar", "JSON parsing error: " + e.getStackTrace());
-            msg="JSONException:" + e.toString();
+            errorMsg = "JSON parsing error:" + e.toString();
         }
         catch(Exception e)
         {
             android.util.Log.e("hikar", "Internal error: " + e.getStackTrace());
-            msg="Internal error: " + e.toString();
+            errorMsg = "Internal error: " + e.toString();
         }
-        //return (status) ? msg /*"Successfully downloaded"*/ : "Error downloading: " + msg;
-        return msg;
+
+        return status;
     }
    
-    
-    public void receive(Object data)
-    {
-        if(receiver!=null)
+
+    public void onProgressUpdate(String... progressMsg) {
+        hud.setMessage(progressMsg[0]);
+    }
+
+
+    public void onPostExecute(Boolean status) {
+
+        if(status==true) {
             receiver.receiveData((ReceivedData)data, sourceGPS);
+        } else {
+            DialogUtils.showDialog(ctx, errorMsg);
+        }
     }
 }

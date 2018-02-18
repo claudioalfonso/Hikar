@@ -1,5 +1,7 @@
 package freemap.hikar;
 
+import android.graphics.Rect;
+import android.util.Log;
 import android.view.View;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -10,16 +12,23 @@ public class HUD extends View{
 
     float[] orientation;
     float height, hfov, orientationAdjustment;
-    Paint paint;
-    
+    Paint paint, msgPaint;
+    String msg;
+    Rect msgRect;
+    boolean blankMessage;
+
     public HUD(Context ctx)
     {
         super(ctx);
         paint = new Paint();
         paint.setColor(Color.RED);
-        paint.setTextSize(24);
+        paint.setTextSize(48);
+        msgPaint = new Paint();
+        msgPaint.setColor(Color.WHITE);
+        msgPaint.setTextSize(96);
         orientation = new float[3];
         hfov = -1.0f;
+        msgRect = new Rect();
     }
     
     public void setOrientation(float[] orientation)
@@ -60,5 +69,32 @@ public class HUD extends View{
             canvas.drawText(data, 0, getHeight()-24, paint);
             
         }
+
+        if(msg!=null) {
+            canvas.drawText(msg, msgRect.left, msgRect.top, msgPaint);
+        }
+
+        if(blankMessage) {
+            canvas.drawRect(msgRect, msgPaint);
+            msgPaint.setColor(Color.WHITE);
+            blankMessage= false;
+        }
+
+    }
+
+    public void removeMessage() {
+        this.msg = null;
+        msgPaint.setColor(Color.TRANSPARENT);
+        blankMessage = true;
+        invalidate();
+
+    }
+
+    public void setMessage(String msg) {
+        int width = getWidth()==0 ? 800: getWidth(), height=getHeight()==0 ? 600:getHeight();
+        this.msg = msg;
+        msgPaint.getTextBounds(msg, 0, msg.length(), msgRect);
+        msgRect.offsetTo(width/2-msgRect.width()/2, height/2-msgRect.height()/2);
+        invalidate();
     }
 }

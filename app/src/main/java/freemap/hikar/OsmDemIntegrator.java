@@ -111,40 +111,41 @@ public class OsmDemIntegrator {
 	// ASSUMPTION: the tiling systems for hgt and osm data coincide - which they do here (see constructor)
 	public boolean update(Point lonLat) throws Exception
 	{
-	    
-	    hgtupdated = hgt.doUpdateSurroundingTiles(lonLat);
-	   
-		
-	       
-	   
-	   osmupdated = osm.doUpdateSurroundingTiles(lonLat);
-	   
-	   
-	    for(HashMap.Entry<String,Tile> e: osmupdated.entrySet())
-		{
-			if(hgtupdated.get(e.getKey()) !=null && osmupdated.get(e.getKey()) != null)
-			    //&& !e.getValue().isCache)
-			{
-			   FreemapDataset d = (FreemapDataset)e.getValue().data;
-			   DEM dem = (DEM)(hgtupdated.get(e.getKey()).data);
-	          
-			   //System.out.println("DEM for " + e.getKey() + "=" + dem);
-			   d.applyDEM(dem); 
-			 
-			   // NOTE should this be commented out??? we presumably want to cache the projected, dem-applied data???
-			   // yes - this gives xml when we want json
-			  // osm.cacheByKey(d, e.getKey());
+	    try {
+			hgtupdated = hgt.doUpdateSurroundingTiles(lonLat);
+		} catch(Exception e) {
+			hgt.doDeleteSurroundingCachedTiles(lonLat);
+			throw e;
+		}
 
+		try {
+			osmupdated = osm.doUpdateSurroundingTiles(lonLat);
+		}catch(Exception e) {
+			osm.doDeleteSurroundingCachedTiles(lonLat);
+			throw e;
+		}
+
+
+			for (HashMap.Entry<String, Tile> e : osmupdated.entrySet()) {
+				if (hgtupdated.get(e.getKey()) != null && osmupdated.get(e.getKey()) != null)
+				//&& !e.getValue().isCache)
+				{
+					FreemapDataset d = (FreemapDataset) e.getValue().data;
+					DEM dem = (DEM) (hgtupdated.get(e.getKey()).data);
+
+					//System.out.println("DEM for " + e.getKey() + "=" + dem);
+					d.applyDEM(dem);
+
+					// NOTE should this be commented out??? we presumably want to cache the projected, dem-applied data???
+					// yes - this gives xml when we want json
+					// osm.cacheByKey(d, e.getKey());
+
+				} else {
+					android.util.Log.d("hikar", "osm: is cache, has dem already");
+					return false;// NW 290514 test wasn't here already just to try and trap this condition for testing
+				}
 			}
-			else
-			{
-			   android.util.Log.d("hikar","osm: is cache, has dem already");
-			   return false;// NW 290514 test wasn't here already just to try and trap this condition for testing
-			}
-	    }
-			
-	  
-		
+
 		return true;
 	}
 	

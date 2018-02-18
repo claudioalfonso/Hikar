@@ -26,13 +26,11 @@ import freemap.jdem.DEM;
 import freemap.datasource.Tile;
 import freemap.data.IdentityProjection;
 
-import java.io.*;
-
 public class OpenGLView extends GLSurfaceView  {
    
    DataRenderer renderer;
    
-   boolean loadingDEMs;
+   boolean loadingData;
     
    
    
@@ -47,7 +45,7 @@ public class OpenGLView extends GLSurfaceView  {
     	
         float hFov;
         float[] modelviewMtx, perspectiveMtx;
-        Handler hfovHandler;
+        Handler openGLViewStatusHandler;
         
         // 180215 replace HashMap of renderedWays with array list.
         // There is now no need to index the rendered ways by id (idea was duplicate prevention), as we are
@@ -71,17 +69,17 @@ public class OpenGLView extends GLSurfaceView  {
         TileDisplayProjectionTransformation trans;
         float nearPlane = 2.0f, farPlane = 3000.0f;
         
-        PrintWriter out;
+
         int nrw;
         
         
-        public DataRenderer(Handler hfovHandler)
+        public DataRenderer(Handler openGLViewStatusHandler)
         {
             hFov = 40.0f;
             renderedWays = new ArrayList<RenderedWay>();
             renderedDEMs = new HashMap<String,RenderedDEM>();
             receivedDatasets = new HashMap<String,FreemapDataset>();
-            this.hfovHandler = hfovHandler;
+            this.openGLViewStatusHandler = openGLViewStatusHandler;
             
             zDisp = 1.4f; 
             
@@ -207,7 +205,7 @@ public class OpenGLView extends GLSurfaceView  {
                 gpuInterface.sendMatrix(perspectiveMtx, "uPerspMtx");
                 calibrateRect.draw(gpuInterface); 
             }
-            else
+            else if (!loadingData) // don't attempt to render anything while loading
             {
                 
                 //Matrix.translateM(modelviewMtx, 0, 0, 0, -zDisp); // needed????
@@ -215,11 +213,11 @@ public class OpenGLView extends GLSurfaceView  {
                 
                 // Prevent the ConcurrentModificationException, This is supposed to happen because you're
                 // adding to the renderedDEMs while iterating through them, and you can't add to a 
-                // collection at the same time as iterating through it 
-                if(true)//!loadingDEMs) 
-                {
-                    synchronized(renderedDEMs)
-                    {
+                // collection at the same time as iterating through it
+                // don't try to do this if loading data otherwise the synchronized blockwill prevent
+                // access to renderedDEMs when loading data
+
+                synchronized(renderedDEMs) {
                         
                         for (HashMap.Entry<String,RenderedDEM> d: renderedDEMs.entrySet())
                         {
@@ -227,13 +225,12 @@ public class OpenGLView extends GLSurfaceView  {
                                 d.getValue().render(gpuInterface);
                         }
                         
-                    }
                 }
                 
                 if(renderedWays.size()>0)
                 { 
-                   
-             
+              //     Log.d("hikar", "rendered ways size: " + renderedWays.size());
+
                     
                     // NOTE! The result matrix must not refer to the same array in memory as either
                     // input matrix! Otherwise you get strange results.
@@ -247,18 +244,28 @@ public class OpenGLView extends GLSurfaceView  {
                    
                     gpuInterface.sendMatrix(modelviewMtx, "uMvMtx");
                     gpuInterface.sendMatrix(perspectiveMtx, "uPerspMtx");
-                    
+
+                   // Log.d("hikar", "about to draw rendered ways... cameraPos=" +cameraPos.x+ " "+ cameraPos.y +" " +cameraPos.z);
                     synchronized(renderedWays)
                     {
+                        int rWayCount = 0, drawnCount=0;
+                        double avDist = 0.0;
                         for(RenderedWay rWay: renderedWays)
-                        {          
-                         
+                        {
+                            rWayCount++;
+                            avDist += rWay.distanceTo(cameraPos);
+                           // Log.d("hikar","isDisplayed()=" + rWay.isDisplayed() + "distance = " + rWay.distanceTo(cameraPos));
                             if(rWay.isDisplayed() && rWay.distanceTo(cameraPos) <= farPlane)
                             {
-                                rWay.draw(gpuInterface); 
+                              //  Log.d("hikar", "drawing a rendered way");
+                                rWay.draw(gpuInterface);
+                                drawnCount++;
                             }       
                         }
+                        avDist /= rWayCount;
+                    //    Log.d("hikar", "rWayCount=" + rWayCount+ " drawnCouint=" + drawnCount +"avDist=" + avDist);
                     }
+
                 }
             }
         }
@@ -290,7 +297,7 @@ public class OpenGLView extends GLSurfaceView  {
                     Bundle bundle = new Bundle();
                     bundle.putFloat("hfov", camHfov);
                     m.setData(bundle);
-                    hfovHandler.sendMessage(m);
+                    openGLViewStatusHandler.sendMessage(m);
                 }
                 try
                 {
@@ -311,6 +318,7 @@ public class OpenGLView extends GLSurfaceView  {
         
         public void setRenderData(DownloadDataTask.ReceivedData data)
         {
+            Log.d("hikar", "setRenderData() starting");
             AsyncTask<DownloadDataTask.ReceivedData,Void,Boolean> setRenderDataTask = 
                     new AsyncTask<DownloadDataTask.ReceivedData,Void,Boolean> ()
             {
@@ -318,17 +326,14 @@ public class OpenGLView extends GLSurfaceView  {
                 {
                     int i=0;
                     nrw=0;
-                    loadingDEMs = true;
-                    
-                    
-                    try
-                    {
-                        out = new PrintWriter(new FileWriter(android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/hikar/render.log.txt"));
-                    }
-                    catch(IOException e) { }
+                    loadingData = true;
+
+                    Log.d("hikar", "setRenderData() task: doinBackground()");
+
                     
                     if(d[0].dem != null)
                     {
+                        Log.d("hikar", "dem is not null");
                         if(renderedDEMs==null) // do not clear out when we enter a new tile!
                             renderedDEMs = new HashMap<String,RenderedDEM> ();
                         synchronized(renderedDEMs)
@@ -346,43 +351,50 @@ public class OpenGLView extends GLSurfaceView  {
                                
                             }
                         }
-                        if(out!=null)out.println("Wrote out " + i + " DEMs.");
+
                     } 
-                    else
-                        if(out!=null)out.println("WARNING!!!! dem is null!");
+
                     if(renderedWays==null) // do not clear out when we enter a new tile!
                         renderedWays = new ArrayList<RenderedWay> ();
                     if(d[0].osm != null)
                     {
+                        Log.d("hikar","osm tile is not null");
                         i=0;
                         for(HashMap.Entry<String, Tile> entry: d[0].osm.entrySet())
-                        { 	
+                        {
+                            Log.d("hikar", "doing an entry tile...");
                             // We don't want to have to operate on a tile we've already dealt with
                             if(receivedDatasets.get(entry.getKey())==null)
                             {
-                                if(out!=null)out.println("Doing OSM tile: " + i + " key=" + entry.getKey());
+                                Log.d("hikar", "Doing OSM tile: " + i + " key=" + entry.getKey());
                                 FreemapDataset curOSM = (FreemapDataset)entry.getValue().data;
                                 //Log.d("hikar", "Rendered FreemapDataset:"  +curOSM);
+                                Log.d("hikar", "putting osm dataset");
                                 receivedDatasets.put(entry.getKey(), curOSM);
+                                Log.d("hikar", "Operating on ways...");
                                 curOSM.operateOnWays(DataRenderer.this);
+                                Log.d("hikar", "number of rendered ways now: " + renderedWays.size());
                             }
                             else 
-                                if(out!=null)out.println("Already loaded in tile " + i + " key=" + entry.getKey());
+                               Log.d("hikar", "Already loaded in tile " + i + " key=" + entry.getKey());
                         }
+                        Log.d("hikar", "done all entry tiles...");
                        
                     }
-                    else
-                        if(out!=null)out.println("WARNING!!!! osm is null!");
-                    
-                    if(out!=null)out.close();
+
                     return true;
                 }
                 
-                public void onPostExecute(Boolean result)
-                {
-                    loadingDEMs = false;
+                public void onPostExecute(Boolean result) {
+                    loadingData = false;
+                    Message m = new Message();
+                    Bundle bundle = new Bundle();
+                    bundle.putBoolean("finishedData", true);
+                    m.setData(bundle);
+                    openGLViewStatusHandler.sendMessage(m);
                 }
             };
+            Log.d("hikar", "executing task...");
             setRenderDataTask.execute(data);  
            
         }
@@ -403,6 +415,7 @@ public class OpenGLView extends GLSurfaceView  {
             
             synchronized(renderedWays)
             {
+          //     Log.d("hikar", "adding a rendered way");
             	renderedWays.add(new RenderedWay (w, 2.0f, trans));
             }
             /*
@@ -490,7 +503,7 @@ public class OpenGLView extends GLSurfaceView  {
         
     }
     
-    public OpenGLView(Context ctx, ViewFragment.HFOVHandler handler)
+    public OpenGLView(Context ctx, Hikar.OpenGLViewStatusHandler handler)
     {
         super(ctx);
         
