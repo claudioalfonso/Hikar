@@ -125,10 +125,10 @@
     <orderEntry type="library" name="com.android.support:support-core-ui-27.0.2" level="project" />
     <orderEntry type="library" name="com.android.support:support-compat-27.0.2" level="project" />
     <orderEntry type="library" name="com.jhlabs:javaproj:1.0.6-noawt-r3@jar" level="project" />
-    <orderEntry type="library" name="freemap:freemaplib:20180221@jar" level="project" />
     <orderEntry type="library" name="commons-codec:commons-codec:1.4@jar" level="project" />
     <orderEntry type="library" name="com.android.support:support-core-utils-27.0.2" level="project" />
     <orderEntry type="library" name="uk.me.jstott:jcoord:1.1-xni06-20170214@jar" level="project" />
+    <orderEntry type="library" name="freemap:freemaplib:20180223@jar" level="project" />
     <orderEntry type="library" name="com.android.support:support-fragment-27.0.2" level="project" />
     <orderEntry type="library" name="artifacts:andromaps" level="project" />
     <orderEntry type="library" name="org.apache.httpcomponents:httpclient:4.1@jar" level="project" />
