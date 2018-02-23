@@ -104,8 +104,7 @@ public class OpenGLView extends GLSurfaceView  {
             Matrix.setIdentityM(modelviewMtx, 0);
             Matrix.setIdentityM(perspectiveMtx, 0);
             
-            trans = new TileDisplayProjectionTransformation (IdentityProjection.getInstance(), 
-                        IdentityProjection.getInstance());
+            trans = null; //new TileDisplayProjectionTransformation (IdentityProjection.getInstance(),IdentityProjection.getInstance());
             
             
            
@@ -281,7 +280,9 @@ public class OpenGLView extends GLSurfaceView  {
         
         public void onPause()
         {
-            cameraCapturer.releaseCamera();
+            if (cameraCapturer!=null) {
+                cameraCapturer.releaseCamera();
+            }
         }
         
         public void onResume()
@@ -395,14 +396,17 @@ public class OpenGLView extends GLSurfaceView  {
                 }
             };
             Log.d("hikar", "executing task...");
-            setRenderDataTask.execute(data);  
-           
+            if (trans != null) {
+                setRenderDataTask.execute(data);
+            }
         }
         
         public void setCameraLocation(Point unprojected)
         {
-           cameraPos = trans.lonLatToDisplay(unprojected);
-           Log.d("hikar", "****CAMERA POS : " + cameraPos + "****");
+            if(trans != null) {
+                cameraPos = trans.lonLatToDisplay(unprojected);
+                Log.d("hikar", "****CAMERA POS : " + cameraPos + "****");
+            }
         }
         
         public void setHeight (double height)
@@ -415,8 +419,10 @@ public class OpenGLView extends GLSurfaceView  {
             
             synchronized(renderedWays)
             {
-          //     Log.d("hikar", "adding a rendered way");
-            	renderedWays.add(new RenderedWay (w, 2.0f, trans));
+                if(trans != null) {
+                    //     Log.d("hikar", "adding a rendered way");
+                    renderedWays.add(new RenderedWay(w, 2.0f, trans));
+                }
             }
             /*
             if((nrw++ % 10) == 0)

@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.app.Activity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.ViewGroup.LayoutParams;
@@ -27,12 +28,13 @@ import android.location.LocationManager;
 import java.lang.ref.WeakReference;
 
 
-public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
+public class Hikar extends AppCompatActivity implements SensorInput.SensorInputReceiver,
         LocationProcessor.Receiver,DownloadDataTask.Receiver,
         PinchListener.Handler
 {
     LocationProcessor locationProcessor;
     HUD hud;
+    boolean userHasSelectedMode;
 
     // from viewfrag
     OsmDemIntegrator integrator;
@@ -109,21 +111,30 @@ public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
         lastLon = -181;
         lastLat = -91;
 
+     //   setLocation(-0.72, 51.05, true);
+
+        Intent intent = new Intent(this, ModeSelector.class);
+        startActivityForResult (intent, 0);
+
     }
     
     public void onPause() {
         super.onPause();
-       locationProcessor.stopUpdates();
-        sensorInput.stop();
-        glView.getRenderer().onPause();
+        if(userHasSelectedMode) {
+            locationProcessor.stopUpdates();
+            sensorInput.stop();
+            glView.getRenderer().onPause();
+        }
     }
 
     public void onResume() {
         super.onResume();
-        locationProcessor.startUpdates();
-        processPrefs();
-        glView.getRenderer().onResume();
-        sensorInput.start();
+        if(userHasSelectedMode) {
+            locationProcessor.startUpdates();
+            processPrefs();
+            glView.getRenderer().onResume();
+            sensorInput.start();
+        }
     }
 
     public void onDestroy() {
@@ -145,28 +156,19 @@ public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
                 prefLfpUrl=prefs.getString("prefLfpUrl", "http://www.free-map.org.uk/downloads/lfp/"),
                 prefOsmUrl=prefs.getString("prefOsmUrl", "http://www.free-map.org.uk/fm/ws/");
         boolean urlchange = setDataUrls(prefLfpUrl, prefSrtmUrl, prefOsmUrl);
-        int prefDEM = Integer.valueOf(prefs.getString("prefDEM","0"));
-        String oldTilingProjID = tilingProjID;
-        int oldDemType = demType;
-        setDEM(prefDEM);
-        String prefDisplayProjectionID = "epsg:" + prefs.getString("prefDisplayProjection", "27700");
-        if(!setDisplayProjectionID(prefDisplayProjectionID))
-            DialogUtils.showDialog(this, "Invalid projection " + prefDisplayProjectionID);
-        else {
-            Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
-            trans.setTilingProj(fac.generate(tilingProjID));
 
-            if (integrator == null || !tilingProjID.equals(oldTilingProjID) ||
-                    oldDemType != demType || urlchange) {
-                integrator = new OsmDemIntegrator(trans.getTilingProj(), demType, lfpUrl, srtmUrl, osmUrl);
 
-                // If we received a location but weren't activated, now load data from the last location
-                if (receivedLocation) {
-                    setLocation(lastLon, lastLat, true);
-                }
+        if (integrator == null || urlchange) {
+            integrator = new OsmDemIntegrator(trans.getTilingProj(), demType, lfpUrl, srtmUrl, osmUrl);
+            glView.getRenderer().deactivate(); // remove any rendered data which might be from another data source
+
+            // If we received a location but weren't activated, now load data from the last location
+            if (receivedLocation) {
+                setLocation(lastLon, lastLat, true);
             }
         }
     }
+
 
 
 
@@ -196,7 +198,7 @@ public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
                 if(!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER))
                 {
                     Intent intent = new Intent(this, LocationEntryActivity.class);
-                    startActivityForResult (intent, 0);
+                    startActivityForResult (intent, 1);
                 }
                 else
                 {
@@ -210,17 +212,42 @@ public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
 
     public void onActivityResult (int requestCode, int resultCode, Intent intent) {
         if(resultCode == Activity.RESULT_OK) {
+            Bundle info = null;
             switch (requestCode) {
                 case 0:
-                    Bundle info = intent.getExtras();
+                    info = intent.getExtras();
+                    int mode = info.getInt("freemap.hikar.mode");
+                    String displayProjection = info.getString("freemap.hikar.displayProjection");
+                    setDEMSourceAndProjections(mode, displayProjection);
+                    userHasSelectedMode = true;
+                    break;
+                case 1:
+                    info = intent.getExtras();
                     double lon = info.getDouble("freemap.hikar.lon"), lat = info.getDouble("freemap.hikar.lat");
                     android.util.Log.d("hikar", "setting locaton to " + lon + "," + lat);
                     setLocation(lon, lat);
                     break;
             }
+        } else if (resultCode == Activity.RESULT_CANCELED && requestCode == 0) {
+           finish();
         }
     }
-    
+
+    public void setDEMSourceAndProjections(int mode, String displayProjection) {
+
+        demType = mode;
+        tilingProjID = tilingProjIDs[demType];
+        Log.d("hikar", "Dem type=" + demType + " tiling Proj ID=" + tilingProjIDs[demType] +
+            " display projection=" + displayProjection);
+        String displayProjectionFullId = "epsg:" + displayProjection;
+        if(!setDisplayProjectionID(displayProjectionFullId))
+            DialogUtils.showDialog(this, "Invalid projection " + displayProjectionFullId);
+        else {
+            Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
+            trans.setTilingProj(fac.generate(tilingProjID));
+        }
+    }
+
     public boolean onKeyDown(int key, KeyEvent ev) {
        
         boolean handled=false;
@@ -354,24 +381,18 @@ public class Hikar extends Activity implements SensorInput.SensorInputReceiver,
     }
 
 
-    public boolean setDEM (int demType) {
-
-        this.demType = demType;
-        if(!(tilingProjID.equals(tilingProjIDs[demType]))) {
-            tilingProjID = tilingProjIDs[demType];
-            return true;
-        }
-
-        return false;
-    }
-
     public boolean setDisplayProjectionID (String displayProjectionID) {
         Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
-        Projection proj = fac.generate(displayProjectionID);
-        if(proj!=null) {
-            trans.setDisplayProj(proj);
-            glView.getRenderer().setProjectionTransformation (trans);
-            return true;
+        try {
+            Projection proj = fac.generate(displayProjectionID);
+            if (proj != null) {
+                trans.setDisplayProj(proj);
+                glView.getRenderer().setProjectionTransformation(trans);
+                return true;
+            }
+        }catch(Exception e) { // some invalid IDs try to load a non-existent file giving an exception
+            DialogUtils.showDialog(this, "Error loading projection: " + e.toString());
+            return false;
         }
         return false;
     }

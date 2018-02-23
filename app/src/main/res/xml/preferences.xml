@@ -7,21 +7,16 @@
     android:summary="Height in metres of the camera above ground."
     android:inputType="numberDecimal" />
 
-<CheckBoxPreference android:key="autoStart"
-    android:defaultValue="true"
-    android:title="Automatically download data"
-    android:summary="Automatically start downloading data when application starts." />
-
 <ListPreference android:key="prefDEM"
-    android:title="Height source"
-    android:summary="Source of height data, OSGB or SRTM" 
+    android:title="Data source and tiling scheme"
+    android:summary="Source of height data and units to use for data tiles."
     android:entries="@array/demKeys"
     android:entryValues="@array/demValues" />
 
 <EditTextPreference android:key="prefDisplayProjection"
     android:defaultValue="27700"
     android:title="Display projection"
-    android:summary="SRID for display projection e.g. 27700 (OSGB) or 3857 (Google)"
+    android:summary="SRID for display projection eg 27700 (OSGB) or 3857 (Google)"
     android:inputType="number" />
 
 <EditTextPreference android:key="prefLfpUrl"
@@ -37,6 +32,6 @@
 <EditTextPreference android:key="prefOsmUrl"
     android:defaultValue="http://www.free-map.org.uk/0.6/ws/"
     android:title="OSM GeoJSON web service directory URL"
-    android:summary="URL of web directory containing web service serving GeoJSON OSM data" />
+    android:summary="URL of web directory containing web service serving GeoJSON OSM data, must take a bbox of degrees" />
 
 </PreferenceScreen>

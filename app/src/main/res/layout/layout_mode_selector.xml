@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView android:text="@string/modesExplanation" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="8pt"
+        android:layout_margin="10px"/>
+
+    <TextView android:text="@string/displayProjectionsExplanation" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textSize="8pt"
+        android:layout_margin="10px"/>
+
+
+
+    <Spinner android:id="@+id/spMode" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:entries="@array/demKeys"
+        android:prompt="@string/mode" android:textSize="10pt" />
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="match_parent" android:layout_height="match_parent" >
+    <TextView android:layout_width="0px" android:layout_height="wrap_content"
+        android:text="@string/displayProjection"  android:layout_weight="1"
+        android:textSize="9pt"/>
+    <EditText android:id="@+id/etDisplayProjection" android:layout_width="0px"
+        android:layout_height="wrap_content" android:layout_weight="1" />
+    <Button android:id="@+id/btnOkModeEntry" android:layout_width="0px"
+        android:layout_height="wrap_content" android:layout_weight="1"
+        android:text="@string/start" />
+    </LinearLayout>
+</LinearLayout>

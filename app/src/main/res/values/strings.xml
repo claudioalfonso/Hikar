@@ -10,4 +10,18 @@
 	<string name="latitude">Latitude</string>
 	<string name="ok">OK</string>
 	<string name="cancel">Cancel</string>
+	<string name="selectmode">Select your mode</string>
+	<string name="uk">UK mode</string>
+	<string name="international">International mode</string>
+	<string name="modesExplanation">UK mode uses Ordnance Survey LandForm PANORAMA height data
+	and OSGB grid references for retrieving data tiles. International mode (which also works in
+	the UK) uses NASA SRTM height data and microdegrees. Note in practice
+	that the default server will only provide data in England and Wales currently; however International mode is setup
+	to be able to talk to servers providing international data, when these servers become available.</string>
+	<string name="displayProjectionsExplanation">Display projection is the projection the data is displayed in.
+	This is OSGB in UK mode and Google Spherical Mercator for international mode; however you can edit this
+	manually (e.g. to a projection used by a particular country or region)</string>
+    <string name="displayProjection">Display projection</string>
+    <string name="start">Start!</string>
+    <string name="mode">Mode</string>
 </resources>

@@ -20,6 +20,34 @@ import java.io.File;
 import java.util.HashMap;
 import android.util.Log;
 
+/* OsmDemIntegrator
+
+	integrates OSM and DEM data sources by interpolating the OSM data on the DEM to give
+	each point an elevation.
+
+	Note how we handle different projections.
+
+	There are two projection schemes - the TILING projection scheme and the DISPLAY projection
+	scheme.
+
+	The TILING projection scheme is used to fetch tiles of data (OSM or DEM). OSM and DEM data
+	must use the same TILING projection. Currently supported schemes are OSGB (metres) and
+	microdegrees. Note that the microdegrees are converted to degrees when sent to the web service
+	to retrieve OSM data; this will allow Hikar to potentially talk to a wider range of GeoJSON
+	web services in addition to Freemap's own.
+
+	The DISPLAY projection scheme relates to how data is DISPLAYED.
+
+	Obviously unprojected (epsg:4326) is no good as a DISPLAY projection as 1 degree of latitude
+	does not equal 1 degree of longitude and neither approximate to 1 metre. The strategy is to
+	fetch TILES in degrees/microdegrees (for best web service support) and then reproject to a
+	more suitable projection, e.g. Google Spherical Mercator (3857, aka 3785 or 900913)
+
+	In the UK it's easy as we can just have everything in OSGB. However to make Hikar
+	internationally-compatible the best approach for now is probably to use SRTM data (uses
+	degrees), get OSM data also in degrees, and project into 3857 or an alternative projection
+	for a specific region of the world.
+ */
 
 
 public class OsmDemIntegrator {
@@ -48,25 +76,29 @@ public class OsmDemIntegrator {
                 tileHeights = { 5000, 25000 }, endianness = { DEMSource.LITTLE_ENDIAN, DEMSource.BIG_ENDIAN };
         double[] resolutions = { 50, 1 / 1200.0 };
         
-        Log.d("hikar", "HELLO");
+
+        SRTMMicrodegFileFormatter srtmFormatter = new SRTMMicrodegFileFormatter("srtm2.php", tileWidths[demType], tileHeights[demType]);
 		WebDataSource demDataSource= demType==HGT_OSGB_LFP ?
 		        new WebDataSource(lfpUrl, 
 				new LFPFileFormatter()):
-				  new WebDataSource(srtmUrl,
-				new SRTMMicrodegFileFormatter("srtm2.php", tileWidths[demType], tileHeights[demType]));
-		
-	
-		String[] tileUnits = { "metres", "microdeg" };
+				  new WebDataSource(srtmUrl, srtmFormatter);
+
+
+		Log.d("hikar", "srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
+        System.out.println("srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
+	//	String[] tileUnits = { "metres", "microdeg" };
+		String[] tileUnits = { "metres", "degrees" };
 		FreemapFileFormatter formatter=new FreemapFileFormatter(tilingProj.getID(), "geojson", tileWidths[demType],
 		                                                        tileHeights[demType]);
         formatter.setScript("bsvr2.php");
         formatter.selectWays("highway");
-        formatter.addKeyval("inUnits", tileUnits[demType]); // used to tell server that bbox is in microdeg
+        formatter.addKeyval("inUnits", tileUnits[demType]);
+        formatter.setMicrodegToDeg(true); // 20180221 web service will receive degrees even though we are using microdegrees - more likely to be compatible with different servers
         
         WebDataSource osmDataSource=new WebDataSource(osmUrl,formatter);
         
         
-        Log.d("hikar", "url=" + formatter.format(new Point(400000,100000)));
+
         Proj4ProjectionFactory factory=new Proj4ProjectionFactory();
 		this.tilingProj = tilingProj;
 		File cacheDir = new File(android.os.Environment.getExternalStorageDirectory().getAbsolutePath()+"/hikar/cache/" +
@@ -127,13 +159,14 @@ public class OsmDemIntegrator {
 
 
 			for (HashMap.Entry<String, Tile> e : osmupdated.entrySet()) {
+	            Log.d("hikar", "retrieving for: " + e.getKey());
 				if (hgtupdated.get(e.getKey()) != null && osmupdated.get(e.getKey()) != null)
 				//&& !e.getValue().isCache)
 				{
 					FreemapDataset d = (FreemapDataset) e.getValue().data;
 					DEM dem = (DEM) (hgtupdated.get(e.getKey()).data);
 
-					//System.out.println("DEM for " + e.getKey() + "=" + dem);
+					Log.d("hikar","DEM for " + e.getKey() + "=" + dem);
 					d.applyDEM(dem);
 
 					// NOTE should this be commented out??? we presumably want to cache the projected, dem-applied data???

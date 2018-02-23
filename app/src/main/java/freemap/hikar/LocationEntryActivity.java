@@ -1,13 +1,14 @@
 package freemap.hikar;
 
-import android.app.Activity;
+
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
 import android.view.View;
 import android.widget.EditText;
 import android.content.Intent;
 
-public class LocationEntryActivity extends Activity
+public class LocationEntryActivity extends AppCompatActivity
 {
     public void onCreate (Bundle savedInstanceState)
     {
