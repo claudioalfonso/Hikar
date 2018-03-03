@@ -9,6 +9,7 @@ import android.hardware.GeomagneticField;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.opengl.Matrix;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -24,6 +25,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.location.LocationManager;
+import android.view.WindowManager;
 
 import java.lang.ref.WeakReference;
 
@@ -111,7 +113,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         lastLon = -181;
         lastLat = -91;
 
-     //   setLocation(-0.72, 51.05, true);
+      // setLocation(-0.72, 51.05, true);
+
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Intent intent = new Intent(this, ModeSelector.class);
         startActivityForResult (intent, 0);
@@ -134,6 +139,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             processPrefs();
             glView.getRenderer().onResume();
             sensorInput.start();
+       //     setLocation(-0.72, 51.05, true);
         }
     }
 
@@ -170,8 +176,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     }
 
 
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -205,6 +209,12 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                     DialogUtils.showDialog(this, "Can only manually specify location when GPS is off");
                 }
                 break;
+
+                /*
+            case R.id.fakegps:
+                setLocation(-0.72, 51.05, true);
+                break;
+                */
 
         }
         return retcode;
@@ -310,13 +320,16 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             hud.setHeight((float)height);
             hud.invalidate();
 
-            if(integrator.needNewData(p) && downloadDataTask==null) {
-                Log.d("hikar", "Starting download data task");
-                downloadDataTask = new DownloadDataTask(this, this,
-                        hud, integrator, gpsLocation);
-                downloadDataTask.execute(p);
-            } else if (!integrator.needNewData(p)) {
-                Log.d("hikar", "We don't need new data");
+            if(downloadDataTask==null || downloadDataTask.getStatus() == AsyncTask.Status.FINISHED) {
+                if (integrator.needNewData(p)) {
+                    Log.d("hikar", "Starting download data task");
+                    downloadDataTask = new DownloadDataTask(this, this,
+                            hud, integrator, gpsLocation);
+                    downloadDataTask.execute(p);
+                } else if (integrator.checkForFailedData(p) && gpsLocation) {
+                    downloadDataTask = new FixFailedTilesTask(this, this, hud, integrator);
+                    downloadDataTask.execute(p);
+                }
             }
         }
     }
@@ -330,6 +343,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             if(sourceGPS) {
                 Log.d("hikar", "Calling setRenderData()");
                 glView.getRenderer().setRenderData(data);
+
             }
         }
 

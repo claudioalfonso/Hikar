@@ -39,7 +39,7 @@
             android:label="Enter location"
             android:screenOrientation="portrait" />
         <activity android:name="freemap.hikar.ModeSelector"
-            android:label="@string/selectmode"
+            android:label="@string/app_name"
             android:screenOrientation="portrait" />
     </application>
 

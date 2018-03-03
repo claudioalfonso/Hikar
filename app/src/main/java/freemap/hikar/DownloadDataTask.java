@@ -40,20 +40,25 @@ public class DownloadDataTask extends AsyncTask<Point,String,Boolean> {
     ReceivedData data;
     String errorMsg;
     Context ctx;
+    String progressMsg;
     
-    public DownloadDataTask(Context ctx, Receiver receiver, HUD hud, OsmDemIntegrator integrator, boolean sourceGPS)
-    {
+    public DownloadDataTask(Context ctx, Receiver receiver, HUD hud, OsmDemIntegrator integrator, boolean sourceGPS) {
+        this(ctx, receiver, hud, integrator, sourceGPS, "Loading data...");
+    }
+    public DownloadDataTask(Context ctx, Receiver receiver, HUD hud, OsmDemIntegrator integrator, boolean sourceGPS,
+        String progressMsg) {
         this.ctx = ctx;
         this.receiver=receiver;
         this.integrator=integrator;
         this.sourceGPS = sourceGPS;
         this.hud = hud;
+        this.progressMsg = progressMsg;
     }
 
     public void onPreExecute() {
         super.onPreExecute();
         Log.d("hikar", "Loading data...");
-        hud.setMessage("Loading data...");
+        hud.setMessage(progressMsg);
     }
     
     public Boolean doInBackground(Point... p)
@@ -63,7 +68,7 @@ public class DownloadDataTask extends AsyncTask<Point,String,Boolean> {
         try
         {
            // msg += " p=" + p[0].x + "," + p[0].y + " ";
-           status = integrator.update(p[0]);
+           status = updateData(p[0]);
             if(status)
             {
                 //msg += " orig nDems=" + integrator.getCurrentDEMTiles().size()+ " " + " nOsms=" + integrator.getCurrentOSMTiles().size() + ". ";
@@ -115,10 +120,14 @@ public class DownloadDataTask extends AsyncTask<Point,String,Boolean> {
 
     public void onPostExecute(Boolean status) {
 
-        if(status==true) {
-            receiver.receiveData((ReceivedData)data, sourceGPS);
-        } else {
-            DialogUtils.showDialog(ctx, errorMsg);
+        if(status==false) {
+            DialogUtils.showDialog(ctx, "Some or all data was not loaded. Hikar will try again shortly. Details: " + errorMsg);
+            hud.removeMessage();
         }
+        receiver.receiveData((ReceivedData) data, sourceGPS);
+    }
+
+    public boolean updateData(Point p) throws Exception {
+        return integrator.update(p);
     }
 }

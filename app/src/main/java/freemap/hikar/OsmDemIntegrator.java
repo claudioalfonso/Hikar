@@ -17,6 +17,7 @@ import freemap.datasource.CachedTileDeliverer;
 import freemap.andromaps.GeoJSONDataInterpreter;
 import freemap.jdem.SRTMMicrodegFileFormatter;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import android.util.Log;
 
@@ -58,6 +59,7 @@ public class OsmDemIntegrator {
 	HashMap<String,Tile> hgtupdated, osmupdated;
 	int demType;
 	double[] multipliers = { 1, 1000000 };
+	ArrayList<Point> failedDemOrigins, failedOsmOrigins;
 	
 	public static final int HGT_OSGB_LFP = 0, HGT_SRTM = 1;
 	
@@ -71,6 +73,8 @@ public class OsmDemIntegrator {
 	                            String lfpUrl, String srtmUrl, String osmUrl)
 	{
 	    this.demType = demType;
+	    failedDemOrigins = new ArrayList<Point>();
+	    failedOsmOrigins = new ArrayList<Point>();
 	    
 	    int[] ptWidths = { 101, 61 }, ptHeights = { 101, 31 }, tileWidths = { 5000, 50000 },
                 tileHeights = { 5000, 25000 }, endianness = { DEMSource.LITTLE_ENDIAN, DEMSource.BIG_ENDIAN };
@@ -86,15 +90,16 @@ public class OsmDemIntegrator {
 
 		Log.d("hikar", "srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
         System.out.println("srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
-	//	String[] tileUnits = { "metres", "microdeg" };
 		String[] tileUnits = { "metres", "degrees" };
 		FreemapFileFormatter formatter=new FreemapFileFormatter(tilingProj.getID(), "geojson", tileWidths[demType],
 		                                                        tileHeights[demType]);
         formatter.setScript("bsvr2.php");
         formatter.selectWays("highway");
         formatter.addKeyval("inUnits", tileUnits[demType]);
-        formatter.setMicrodegToDeg(true); // 20180221 web service will receive degrees even though we are using microdegrees - more likely to be compatible with different servers
-        
+        if(tileUnits[demType].equals("degrees")) {
+            formatter.setMicrodegToDeg(true); // 20180221 web service will receive degrees even though we are using microdegrees - more likely to be compatible with different servers
+        }
+
         WebDataSource osmDataSource=new WebDataSource(osmUrl,formatter);
         
         
@@ -139,23 +144,71 @@ public class OsmDemIntegrator {
 	   
 	    return osm.needNewData(lonLat) || hgt.needNewData(lonLat);
 	}
-	
+
+	public boolean checkForFailedData(Point lonLat)
+	{
+		failedDemOrigins = hgt.getFailedSurroundingTiles(lonLat);
+		failedOsmOrigins = osm.getFailedSurroundingTiles(lonLat);
+		return !failedDemOrigins.isEmpty() || !failedOsmOrigins.isEmpty();
+	}
+
+
+	public boolean fetchFailedTiles() throws Exception{
+
+		HashMap<String, Tile> demTiles=new HashMap<String,Tile>(), osmTiles=new HashMap<String,Tile>();
+		if(!failedDemOrigins.isEmpty()) {
+			demTiles = hgt.doUpdateFailedTiles(failedDemOrigins);
+		}
+		if(!failedOsmOrigins.isEmpty()) {
+			osmTiles = osm.doUpdateFailedTiles(failedOsmOrigins);
+		}
+
+
+        if((demTiles.isEmpty() && osmTiles.isEmpty()) || hgtupdated==null || osmupdated==null) {
+            return false;
+        }
+
+        for (HashMap.Entry<String, Tile> demTile: demTiles.entrySet()) {
+            hgtupdated.put(demTile.getKey(), demTile.getValue());
+        }
+        for (HashMap.Entry<String, Tile> osmTile: osmTiles.entrySet()) {
+            osmupdated.put(osmTile.getKey(), osmTile.getValue());
+        }
+
+        for(HashMap.Entry<String, Tile> osmTile: osmupdated.entrySet()) {
+            String key = osmTile.getKey();
+            FreemapDataset dataset = (FreemapDataset)osmTile.getValue().data;
+            Tile demTile = hgtupdated.get(key);
+            if(demTile!=null && dataset!=null) {
+                DEM dem = (DEM)demTile.data;
+                if(!dataset.isDEMApplied() && dem!=null && !dem.isEmptyData()) {
+                    dataset.applyDEM(dem);
+                }
+            }
+        }
+        return true;
+	}
+
+
+
 	// ASSUMPTION: the tiling systems for hgt and osm data coincide - which they do here (see constructor)
 	public boolean update(Point lonLat) throws Exception
 	{
-	    try {
-			hgtupdated = hgt.doUpdateSurroundingTiles(lonLat);
-		} catch(Exception e) {
-			hgt.doDeleteSurroundingCachedTiles(lonLat);
-			throw e;
-		}
 
-		try {
-			osmupdated = osm.doUpdateSurroundingTiles(lonLat);
-		}catch(Exception e) {
-			osm.doDeleteSurroundingCachedTiles(lonLat);
-			throw e;
-		}
+			try {
+				hgtupdated = hgt.doUpdateSurroundingTiles(lonLat);
+			}catch(Exception e) {
+				hgtupdated = hgt.getPartiallyUpdatedData();
+				throw e;
+			}
+
+			try {
+				osmupdated = osm.doUpdateSurroundingTiles(lonLat);
+			} catch(Exception e) {
+				osmupdated = osm.getPartiallyUpdatedData();
+				throw e;
+			}
+
 
 
 			for (HashMap.Entry<String, Tile> e : osmupdated.entrySet()) {
@@ -167,6 +220,9 @@ public class OsmDemIntegrator {
 					DEM dem = (DEM) (hgtupdated.get(e.getKey()).data);
 
 					Log.d("hikar","DEM for " + e.getKey() + "=" + dem);
+					if(d==null) {
+						Log.d("hikar", "UNEXPECTED!!! FreemapDataset is null!!!");
+					}
 					d.applyDEM(dem);
 
 					// NOTE should this be commented out??? we presumably want to cache the projected, dem-applied data???

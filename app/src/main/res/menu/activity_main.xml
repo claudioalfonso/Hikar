@@ -6,4 +6,8 @@
         android:title="@string/menu_settings"/>
 	<item android:id="@+id/menu_location"
 	    	android:title="@string/menu_location" />
+	<!--
+	<item android:id="@+id/fakegps"
+		android:title="Fake GPS received" />
+		-->
 </menu>

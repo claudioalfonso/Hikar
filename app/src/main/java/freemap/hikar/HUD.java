@@ -63,9 +63,7 @@ public class HUD extends View{
         if(orientation!=null)
         {
            
-            String data = String.format ("Azimuth %8.3f (adj %5.1f) pitch %8.3f roll %8.3f ht %8.3f hfov %8.3f", 
-                                            orientation[0], orientationAdjustment, orientation[1],
-                                            orientation[2], height, hfov);
+            String data = String.format ("Elevation %8.3f Hfov %8.3f", height, hfov);
             canvas.drawText(data, 0, getHeight()-24, paint);
             
         }

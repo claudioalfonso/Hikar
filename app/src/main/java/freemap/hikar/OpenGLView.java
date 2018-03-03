@@ -16,6 +16,7 @@ import android.os.Message;
 import java.io.IOException;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.ArrayList;
 
@@ -30,7 +31,7 @@ public class OpenGLView extends GLSurfaceView  {
    
    DataRenderer renderer;
    
-   boolean loadingData;
+
     
    
    
@@ -38,7 +39,88 @@ public class OpenGLView extends GLSurfaceView  {
    {
        public void visit(RenderedWay rw);
    }
-    
+
+   static class SetRenderTask extends AsyncTask<DownloadDataTask.ReceivedData,Void,Boolean>{
+
+        WeakReference<DataRenderer> rendererRef;
+        public SetRenderTask(DataRenderer renderer) {
+            rendererRef = new WeakReference<DataRenderer>(renderer);
+        }
+
+        protected Boolean doInBackground(DownloadDataTask.ReceivedData... d)
+        {
+                    DataRenderer renderer = rendererRef.get();
+
+                    if(renderer !=  null) {
+
+                        int i = 0;
+                        renderer.nrw = 0;
+                        renderer.loadingData = true;
+
+                        Log.d("hikar", "setRenderData() task: doinBackground()");
+
+
+                        if (d[0].dem != null) {
+                            Log.d("hikar", "dem is not null");
+                            if (renderer.renderedDEMs == null) // do not clear out when we enter a new tile!
+                                renderer.renderedDEMs = new HashMap<String, RenderedDEM>();
+                            synchronized (renderer.renderedDEMs) {
+                                for (HashMap.Entry<String, Tile> entry : d[0].dem.entrySet()) {
+                                    DEM curDEM = (DEM) entry.getValue().data;
+
+                                    String key = entry.getKey();
+
+                                    if (renderer.renderedDEMs.get(key) == null)
+                                        renderer.renderedDEMs.put(key, new RenderedDEM(curDEM, renderer.trans));
+
+                                    i++;
+
+                                }
+                            }
+
+                        }
+
+                        if (renderer.renderedWays == null) // do not clear out when we enter a new tile!
+                            renderer.renderedWays = new ArrayList<RenderedWay>();
+                        if (d[0].osm != null) {
+                            Log.d("hikar", "osm tile is not null");
+                            i = 0;
+                            for (HashMap.Entry<String, Tile> entry : d[0].osm.entrySet()) {
+                                Log.d("hikar", "doing an entry tile...");
+                                // We don't want to have to operate on a tile we've already dealt with
+                                if (renderer.receivedDatasets.get(entry.getKey()) == null) {
+                                    Log.d("hikar", "Doing OSM tile: " + i + " key=" + entry.getKey());
+                                    FreemapDataset curOSM = (FreemapDataset) entry.getValue().data;
+                                    //Log.d("hikar", "Rendered FreemapDataset:"  +curOSM);
+                                    Log.d("hikar", "putting osm dataset");
+                                    renderer.receivedDatasets.put(entry.getKey(), curOSM);
+                                    Log.d("hikar", "Operating on ways...");
+                                    curOSM.operateOnWays(renderer);
+                                    Log.d("hikar", "number of rendered ways now: " + renderer.renderedWays.size());
+                                } else
+                                    Log.d("hikar", "Already loaded in tile " + i + " key=" + entry.getKey());
+                            }
+                            Log.d("hikar", "done all entry tiles...");
+
+                        }
+
+                        return true;
+                    }
+                    return false;
+        }
+
+       public void onPostExecute(Boolean result) {
+           DataRenderer renderer = rendererRef.get();
+           if(renderer != null) {
+               renderer.loadingData = false;
+               Message m = new Message();
+               Bundle bundle = new Bundle();
+               bundle.putBoolean("finishedData", true);
+               m.setData(bundle);
+               renderer.openGLViewStatusHandler.sendMessage(m);
+           }
+       }
+    }
    
     class DataRenderer implements GLSurfaceView.Renderer, FreemapDataset.WayVisitor {
         
@@ -46,6 +128,7 @@ public class OpenGLView extends GLSurfaceView  {
         float hFov;
         float[] modelviewMtx, perspectiveMtx;
         Handler openGLViewStatusHandler;
+        boolean loadingData;
         
         // 180215 replace HashMap of renderedWays with array list.
         // There is now no need to index the rendered ways by id (idea was duplicate prevention), as we are
@@ -320,83 +403,11 @@ public class OpenGLView extends GLSurfaceView  {
         public void setRenderData(DownloadDataTask.ReceivedData data)
         {
             Log.d("hikar", "setRenderData() starting");
-            AsyncTask<DownloadDataTask.ReceivedData,Void,Boolean> setRenderDataTask = 
-                    new AsyncTask<DownloadDataTask.ReceivedData,Void,Boolean> ()
-            {
-                protected Boolean doInBackground(DownloadDataTask.ReceivedData... d)
-                {
-                    int i=0;
-                    nrw=0;
-                    loadingData = true;
 
-                    Log.d("hikar", "setRenderData() task: doinBackground()");
-
-                    
-                    if(d[0].dem != null)
-                    {
-                        Log.d("hikar", "dem is not null");
-                        if(renderedDEMs==null) // do not clear out when we enter a new tile!
-                            renderedDEMs = new HashMap<String,RenderedDEM> ();
-                        synchronized(renderedDEMs)
-                        {
-                            for(HashMap.Entry<String, Tile> entry: d[0].dem.entrySet())
-                            {
-                                DEM curDEM = (DEM)entry.getValue().data;
-                   
-                                String key = entry.getKey();
-                                
-                                if(renderedDEMs.get(key)==null)
-                                    renderedDEMs.put(key, new RenderedDEM(curDEM, trans));
-                                
-                                i++;
-                               
-                            }
-                        }
-
-                    } 
-
-                    if(renderedWays==null) // do not clear out when we enter a new tile!
-                        renderedWays = new ArrayList<RenderedWay> ();
-                    if(d[0].osm != null)
-                    {
-                        Log.d("hikar","osm tile is not null");
-                        i=0;
-                        for(HashMap.Entry<String, Tile> entry: d[0].osm.entrySet())
-                        {
-                            Log.d("hikar", "doing an entry tile...");
-                            // We don't want to have to operate on a tile we've already dealt with
-                            if(receivedDatasets.get(entry.getKey())==null)
-                            {
-                                Log.d("hikar", "Doing OSM tile: " + i + " key=" + entry.getKey());
-                                FreemapDataset curOSM = (FreemapDataset)entry.getValue().data;
-                                //Log.d("hikar", "Rendered FreemapDataset:"  +curOSM);
-                                Log.d("hikar", "putting osm dataset");
-                                receivedDatasets.put(entry.getKey(), curOSM);
-                                Log.d("hikar", "Operating on ways...");
-                                curOSM.operateOnWays(DataRenderer.this);
-                                Log.d("hikar", "number of rendered ways now: " + renderedWays.size());
-                            }
-                            else 
-                               Log.d("hikar", "Already loaded in tile " + i + " key=" + entry.getKey());
-                        }
-                        Log.d("hikar", "done all entry tiles...");
-                       
-                    }
-
-                    return true;
-                }
-                
-                public void onPostExecute(Boolean result) {
-                    loadingData = false;
-                    Message m = new Message();
-                    Bundle bundle = new Bundle();
-                    bundle.putBoolean("finishedData", true);
-                    m.setData(bundle);
-                    openGLViewStatusHandler.sendMessage(m);
-                }
-            };
             Log.d("hikar", "executing task...");
             if (trans != null) {
+
+                SetRenderTask setRenderDataTask = new SetRenderTask(this);
                 setRenderDataTask.execute(data);
             }
         }
