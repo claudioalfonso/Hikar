@@ -1,7 +1,6 @@
 package freemap.hikar;
 
 import freemap.data.Projection;
-//import freemap.datasource.CachedTileDeliverer;
 import freemap.datasource.WebDataSource;
 import freemap.jdem.DEMSource;
 import freemap.jdem.HGTDataInterpreter;
@@ -62,12 +61,7 @@ public class OsmDemIntegrator {
 	ArrayList<Point> failedDemOrigins, failedOsmOrigins;
 	
 	public static final int HGT_OSGB_LFP = 0, HGT_SRTM = 1;
-	
-	public OsmDemIntegrator(Projection tilingProj)
-	{
-	    this (tilingProj, HGT_OSGB_LFP, "http://www.free-map.org.uk/downloads/lfp/",
-	            "http://www.free-map.org.uk/ws/", "http://www.free-map.org.uk/fm/ws/");
-	}
+
 	
 	public OsmDemIntegrator(Projection tilingProj, int demType,
 	                            String lfpUrl, String srtmUrl, String osmUrl)
@@ -81,19 +75,18 @@ public class OsmDemIntegrator {
         double[] resolutions = { 50, 1 / 1200.0 };
         
 
-        SRTMMicrodegFileFormatter srtmFormatter = new SRTMMicrodegFileFormatter("srtm2.php", tileWidths[demType], tileHeights[demType]);
+        SRTMMicrodegFileFormatter srtmFormatter = new SRTMMicrodegFileFormatter(tileWidths[demType], tileHeights[demType]);
 		WebDataSource demDataSource= demType==HGT_OSGB_LFP ?
 		        new WebDataSource(lfpUrl, 
 				new LFPFileFormatter()):
 				  new WebDataSource(srtmUrl, srtmFormatter);
 
 
-		Log.d("hikar", "srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
-        System.out.println("srtm url=" + srtmFormatter.format(new Point(-1400000,50900000)));
+
 		String[] tileUnits = { "metres", "degrees" };
 		FreemapFileFormatter formatter=new FreemapFileFormatter(tilingProj.getID(), "geojson", tileWidths[demType],
 		                                                        tileHeights[demType]);
-        formatter.setScript("bsvr2.php");
+
         formatter.selectWays("highway");
         formatter.addKeyval("inUnits", tileUnits[demType]);
         if(tileUnits[demType].equals("degrees")) {

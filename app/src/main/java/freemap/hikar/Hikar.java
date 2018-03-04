@@ -55,6 +55,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     boolean receivedLocation;
     OpenGLViewStatusHandler openGLViewStatusHandler;
 
+    static String DEFAULT_LFP_URL = "http://www.free-map.org.uk/downloads/lfp/",
+            DEFAULT_SRTM_URL =  "http://www.free-map.org.uk/ws/srtm2.php",
+            DEFAULT_OSM_URL = "http://www.free-map.org.uk/fm/ws/bsvr2.php";
+
     // end
 
     // http://www.androiddesignpatterns.com/2013/01/inner-class-handler-memory-leak.html
@@ -107,9 +111,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         demType = OsmDemIntegrator.HGT_OSGB_LFP;
         trans = new TileDisplayProjectionTransformation ( null, null );
-        lfpUrl = "http://www.free-map.org.uk/downloads/lfp/";
-        srtmUrl = "http://www.free-map.org.uk/ws/";
-        osmUrl = "http://www.free-map.org.uk/fm/ws/";
+        lfpUrl = DEFAULT_LFP_URL;
+        srtmUrl = DEFAULT_SRTM_URL;
+        osmUrl = DEFAULT_OSM_URL;
         lastLon = -181;
         lastLat = -91;
 
@@ -158,11 +162,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         float cameraHeight = Float.parseFloat(prefs.getString("prefCameraHeight","1.4"));
         setCameraHeight(cameraHeight);
-        String prefSrtmUrl=prefs.getString("prefSrtmUrl","http://www.free-map.org.uk/ws/"),
-                prefLfpUrl=prefs.getString("prefLfpUrl", "http://www.free-map.org.uk/downloads/lfp/"),
-                prefOsmUrl=prefs.getString("prefOsmUrl", "http://www.free-map.org.uk/fm/ws/");
-        boolean urlchange = setDataUrls(prefLfpUrl, prefSrtmUrl, prefOsmUrl);
-
+        String prefSrtmUrl=prefs.getString("prefSrtmUrl",DEFAULT_SRTM_URL),
+                prefLfpUrl=prefs.getString("prefLfpUrl", DEFAULT_LFP_URL),
+                prefOsmUrl=prefs.getString("prefOsmUrl", DEFAULT_OSM_URL);
+            boolean urlchange = setDataUrls(prefLfpUrl, prefSrtmUrl, prefOsmUrl);
 
         if (integrator == null || urlchange) {
             integrator = new OsmDemIntegrator(trans.getTilingProj(), demType, lfpUrl, srtmUrl, osmUrl);
@@ -186,6 +189,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean retcode=false;
+
 
         switch(item.getItemId())
         {

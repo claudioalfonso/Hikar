@@ -26,12 +26,12 @@
 
 <EditTextPreference android:key="prefSrtmUrl"
     android:defaultValue="http://www.free-map.org.uk/ws/"
-    android:title="SRTM web service directory URL"
-    android:summary="URL of web directory containing web service serving SRTM data" />
+    android:title="SRTM web service URL"
+    android:summary="URL of web service serving SRTM data" />
 
 <EditTextPreference android:key="prefOsmUrl"
     android:defaultValue="http://www.free-map.org.uk/0.6/ws/"
-    android:title="OSM GeoJSON web service directory URL"
-    android:summary="URL of web directory containing web service serving GeoJSON OSM data, must take a bbox of degrees" />
+    android:title="OSM GeoJSON web service URL"
+    android:summary="URL of web service serving GeoJSON OSM data, must take a bbox of degrees" />
 
 </PreferenceScreen>
