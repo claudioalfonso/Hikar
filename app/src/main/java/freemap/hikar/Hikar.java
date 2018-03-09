@@ -54,6 +54,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     double lastLon, lastLat;
     boolean receivedLocation;
     OpenGLViewStatusHandler openGLViewStatusHandler;
+    boolean enableOrientationAdjustment;
 
     static String DEFAULT_LFP_URL = "http://www.free-map.org.uk/downloads/lfp/",
             DEFAULT_SRTM_URL =  "http://www.free-map.org.uk/ws/srtm2.php",
@@ -99,14 +100,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         locationProcessor = new LocationProcessor(this,this,5000,10);
         glView.setOnTouchListener(new PinchListener(this));
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if(prefs != null) {
-            float orientationAdjustment = prefs.getFloat("orientationAdjustment", 0.0f);
-            changeOrientationAdjustment(orientationAdjustment);
-            hud.changeOrientationAdjustment(orientationAdjustment);
-        }
-
-
         tilingProjID = "";
 
         demType = OsmDemIntegrator.HGT_OSGB_LFP;
@@ -122,6 +115,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if(prefs != null) {
+            orientationAdjustment = prefs.getFloat("orientationAdjustment", 0.0f);
+            hud.changeOrientationAdjustment(orientationAdjustment);
+        }
         Intent intent = new Intent(this, ModeSelector.class);
         startActivityForResult (intent, 0);
 
@@ -152,7 +150,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putFloat("orientationAdjustment", getOrientationAdjustment());
+        editor.putFloat("orientationAdjustment", orientationAdjustment);
         editor.commit();
 
         sensorInput.detach();
@@ -162,6 +160,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         float cameraHeight = Float.parseFloat(prefs.getString("prefCameraHeight","1.4"));
         setCameraHeight(cameraHeight);
+
+        enableOrientationAdjustment = prefs.getBoolean("prefEnableOrientationAdjustment", false);
+        hud.setOrientationAdjustmentEnabled(enableOrientationAdjustment);
+
         String prefSrtmUrl=prefs.getString("prefSrtmUrl",DEFAULT_SRTM_URL),
                 prefLfpUrl=prefs.getString("prefLfpUrl", DEFAULT_LFP_URL),
                 prefOsmUrl=prefs.getString("prefOsmUrl", DEFAULT_OSM_URL);
@@ -263,21 +265,24 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     }
 
     public boolean onKeyDown(int key, KeyEvent ev) {
-       
+
         boolean handled=false;
+        if(enableOrientationAdjustment) {
+
         
-        switch(key) {
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                changeOrientationAdjustment(-1.0f);
-                hud.changeOrientationAdjustment(-1.0f);
-                handled=true;
-                break;
-                
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                changeOrientationAdjustment(1.0f);
-                hud.changeOrientationAdjustment(1.0f);
-                handled=true;
-                break;
+            switch(key) {
+                case KeyEvent.KEYCODE_VOLUME_DOWN:
+                    orientationAdjustment -= 1.0f;
+                    hud.changeOrientationAdjustment(-1.0f);
+                    handled = true;
+                    break;
+
+                case KeyEvent.KEYCODE_VOLUME_UP:
+                    orientationAdjustment += 1.0f;
+                    hud.changeOrientationAdjustment(1.0f);
+                    handled = true;
+                    break;
+            }
         }
        
         return handled ? true: super.onKeyDown(key, ev);
@@ -366,7 +371,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         float[] orientation = new float[3];
 
         float magNorth = field==null ? 0.0f : field.getDeclination(),
-                actualAdjustment = magNorth + orientationAdjustment;
+                actualAdjustment = magNorth + (enableOrientationAdjustment? orientationAdjustment:0);
         Matrix.rotateM (glR, 0, actualAdjustment, 0.0f, 0.0f, 1.0f);
 
         SensorManager.getOrientation(glR, orientation);
@@ -421,15 +426,5 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         this.srtmUrl = srtmUrl;
         this.osmUrl = osmUrl;
         return change;
-    }
-
-    public void changeOrientationAdjustment(float amount)
-    {
-        orientationAdjustment += amount;
-    }
-
-    public float getOrientationAdjustment()
-    {
-        return orientationAdjustment;
     }
 }

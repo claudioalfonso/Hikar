@@ -15,7 +15,7 @@ public class HUD extends View{
     Paint paint, msgPaint;
     String msg;
     Rect msgRect;
-    boolean blankMessage;
+    boolean blankMessage, enableOrientationAdjustment;
 
     public HUD(Context ctx)
     {
@@ -29,6 +29,7 @@ public class HUD extends View{
         orientation = new float[3];
         hfov = -1.0f;
         msgRect = new Rect();
+        orientationAdjustment = 0.0f;
     }
     
     public void setOrientation(float[] orientation)
@@ -63,7 +64,9 @@ public class HUD extends View{
         if(orientation!=null)
         {
            
-            String data = String.format ("Elevation %8.3f Hfov %8.3f", height, hfov);
+            String data = enableOrientationAdjustment ? String.format ("Elevation %8.3f Hfov %8.3f Adjustment %8.3f", height, hfov,
+                    orientationAdjustment):
+                    String.format ("Elevation %8.3f Hfov %8.3f", height, hfov);
             canvas.drawText(data, 0, getHeight()-24, paint);
             
         }
@@ -80,6 +83,9 @@ public class HUD extends View{
 
     }
 
+    public void setOrientationAdjustmentEnabled(boolean enabled) {
+        enableOrientationAdjustment = enabled;
+    }
     public void removeMessage() {
         this.msg = null;
         msgPaint.setColor(Color.TRANSPARENT);

@@ -7,18 +7,6 @@
     android:summary="Height in metres of the camera above ground."
     android:inputType="numberDecimal" />
 
-<ListPreference android:key="prefDEM"
-    android:title="Data source and tiling scheme"
-    android:summary="Source of height data and units to use for data tiles."
-    android:entries="@array/demKeys"
-    android:entryValues="@array/demValues" />
-
-<EditTextPreference android:key="prefDisplayProjection"
-    android:defaultValue="27700"
-    android:title="Display projection"
-    android:summary="SRID for display projection eg 27700 (OSGB) or 3857 (Google)"
-    android:inputType="number" />
-
 <EditTextPreference android:key="prefLfpUrl"
     android:defaultValue="http://www.free-map.org.uk/downloads/lfp/"
     android:title="LandForm PANORAMA directory URL"
@@ -33,5 +21,10 @@
     android:defaultValue="http://www.free-map.org.uk/0.6/ws/"
     android:title="OSM GeoJSON web service URL"
     android:summary="URL of web service serving GeoJSON OSM data, must take a bbox of degrees" />
+
+    <CheckBoxPreference android:key="prefEnableOrientationAdjustment"
+        android:defaultValue="false"
+        android:title="Enable orientation adjustment with volume controls"
+        android:summary="Enable adjustment in compass orientation with volume controls, in case of inaccuracy" />
 
 </PreferenceScreen>
