@@ -399,16 +399,12 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public boolean setDisplayProjectionID(String displayProjectionID) {
         Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
-        try {
-            Projection proj = fac.generate(displayProjectionID);
-            if (proj != null) {
-                trans.setDisplayProj(proj);
-                glView.getRenderer().setProjectionTransformation(trans);
-                return true;
-            }
-        } catch (Exception e) { // some invalid IDs try to load a non-existent file giving an exception
-            DialogUtils.showDialog(this, "Error loading projection: " + e.toString());
-            return false;
+
+        Projection proj = fac.generate(displayProjectionID);
+        if (proj != null) {
+            trans.setDisplayProj(proj);
+            glView.getRenderer().setProjectionTransformation(trans);
+            return true;
         }
         return false;
     }
