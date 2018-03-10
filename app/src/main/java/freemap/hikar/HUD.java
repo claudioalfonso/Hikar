@@ -8,7 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Color;
 import android.content.Context;
 
-public class HUD extends View{
+public class HUD extends View {
 
     float[] orientation;
     float height, hfov, orientationAdjustment;
@@ -17,8 +17,7 @@ public class HUD extends View{
     Rect msgRect;
     boolean blankMessage, enableOrientationAdjustment;
 
-    public HUD(Context ctx)
-    {
+    public HUD(Context ctx) {
         super(ctx);
         paint = new Paint();
         paint.setColor(Color.RED);
@@ -31,54 +30,47 @@ public class HUD extends View{
         msgRect = new Rect();
         orientationAdjustment = 0.0f;
     }
-    
-    public void setOrientation(float[] orientation)
-    {
-        if(orientation.length>=3)
-        {
-            for(int i=0; i<3; i++)
-                this.orientation[i] = (float)(orientation[i]*180.0/Math.PI);
+
+    public void setOrientation(float[] orientation) {
+        if (orientation.length >= 3) {
+            for (int i = 0; i < 3; i++)
+                this.orientation[i] = (float) (orientation[i] * 180.0 / Math.PI);
         }
     }
-    
-    public void setHeight(float height)
-    {
-        this.height = height;    
+
+    public void setHeight(float height) {
+        this.height = height;
     }
-    
-    public void setHFOV(float hfov)
-    {
+
+    public void setHFOV(float hfov) {
         this.hfov = hfov;
     }
-   
-    public void changeOrientationAdjustment(float diff)
-    {
+
+    public void changeOrientationAdjustment(float diff) {
         this.orientationAdjustment += diff;
     }
-    
-    public void onDraw (Canvas canvas)
-    {
+
+    public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-       
-       
-        if(orientation!=null)
-        {
-           
-            String data = enableOrientationAdjustment ? String.format ("Elevation %8.3f Hfov %8.3f Adjustment %8.3f", height, hfov,
-                    orientationAdjustment):
-                    String.format ("Elevation %8.3f Hfov %8.3f", height, hfov);
-            canvas.drawText(data, 0, getHeight()-24, paint);
-            
+
+
+        if (orientation != null) {
+
+            String data = enableOrientationAdjustment ? String.format("Elevation %8.3f Hfov %8.3f Adjustment %8.3f", height, hfov,
+                    orientationAdjustment) :
+                    String.format("Elevation %8.3f Hfov %8.3f", height, hfov);
+            canvas.drawText(data, 0, getHeight() - 24, paint);
+
         }
 
-        if(msg!=null) {
+        if (msg != null) {
             canvas.drawText(msg, msgRect.left, msgRect.top, msgPaint);
         }
 
-        if(blankMessage) {
+        if (blankMessage) {
             canvas.drawRect(msgRect, msgPaint);
             msgPaint.setColor(Color.WHITE);
-            blankMessage= false;
+            blankMessage = false;
         }
 
     }
@@ -86,6 +78,7 @@ public class HUD extends View{
     public void setOrientationAdjustmentEnabled(boolean enabled) {
         enableOrientationAdjustment = enabled;
     }
+
     public void removeMessage() {
         this.msg = null;
         msgPaint.setColor(Color.TRANSPARENT);
@@ -95,10 +88,10 @@ public class HUD extends View{
     }
 
     public void setMessage(String msg) {
-        int width = getWidth()==0 ? 800: getWidth(), height=getHeight()==0 ? 600:getHeight();
+        int width = getWidth() == 0 ? 800 : getWidth(), height = getHeight() == 0 ? 600 : getHeight();
         this.msg = msg;
         msgPaint.getTextBounds(msg, 0, msg.length(), msgRect);
-        msgRect.offsetTo(width/2-msgRect.width()/2, height/2-msgRect.height()/2);
+        msgRect.offsetTo(width / 2 - msgRect.width() / 2, height / 2 - msgRect.height() / 2);
         invalidate();
     }
 }

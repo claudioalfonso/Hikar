@@ -16,17 +16,17 @@ import android.widget.Spinner;
  */
 
 public class ModeSelector extends AppCompatActivity implements View.OnClickListener,
-    Spinner.OnItemSelectedListener{
+        Spinner.OnItemSelectedListener {
 
     int mode = 0;
-    String[] displayProjectionSystems = { "27700", "3785" };
+    String[] displayProjectionSystems = {"27700", "3785"};
 
-    public void onCreate (Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout_mode_selector);
-        Button btnOkModeEntry = (Button)findViewById(R.id.btnOkModeEntry);
+        Button btnOkModeEntry = (Button) findViewById(R.id.btnOkModeEntry);
         btnOkModeEntry.setOnClickListener(this);
-        Spinner spinner= (Spinner)findViewById(R.id.spMode);
+        Spinner spinner = (Spinner) findViewById(R.id.spMode);
         spinner.setOnItemSelectedListener(this);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -39,7 +39,7 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
         sendResultBack();
     }
 
-    public void onItemSelected (AdapterView<?> parent, View view, int position, long id) {
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         mode = position;
         updateDisplayProjection();
     }
@@ -49,12 +49,12 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
     }
 
     private void updateDisplayProjection() {
-        EditText etDisplayProjection = (EditText)findViewById(R.id.etDisplayProjection);
+        EditText etDisplayProjection = (EditText) findViewById(R.id.etDisplayProjection);
         etDisplayProjection.setText(displayProjectionSystems[mode]);
     }
 
     private void sendResultBack() {
-        EditText etDisplayProjection = (EditText)findViewById(R.id.etDisplayProjection);
+        EditText etDisplayProjection = (EditText) findViewById(R.id.etDisplayProjection);
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
         bundle.putInt("freemap.hikar.mode", mode);

@@ -31,9 +31,8 @@ import java.lang.ref.WeakReference;
 
 
 public class Hikar extends AppCompatActivity implements SensorInput.SensorInputReceiver,
-        LocationProcessor.Receiver,DownloadDataTask.Receiver,
-        PinchListener.Handler
-{
+        LocationProcessor.Receiver, DownloadDataTask.Receiver,
+        PinchListener.Handler {
     LocationProcessor locationProcessor;
     HUD hud;
     boolean userHasSelectedMode;
@@ -46,7 +45,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     String tilingProjID;
     Point locDisplayProj;
     int demType;
-    String[] tilingProjIDs = { "epsg:27700", "epsg:4326" };
+    String[] tilingProjIDs = {"epsg:27700", "epsg:4326"};
     TileDisplayProjectionTransformation trans;
     String lfpUrl, srtmUrl, osmUrl;
     GeomagneticField field;
@@ -57,7 +56,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     boolean enableOrientationAdjustment;
 
     static String DEFAULT_LFP_URL = "http://www.free-map.org.uk/downloads/lfp/",
-            DEFAULT_SRTM_URL =  "http://www.free-map.org.uk/ws/srtm2.php",
+            DEFAULT_SRTM_URL = "http://www.free-map.org.uk/ws/srtm2.php",
             DEFAULT_OSM_URL = "http://www.free-map.org.uk/fm/ws/bsvr2.php";
 
     // end
@@ -73,13 +72,14 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         public void handleMessage(Message msg) {
             Bundle data = msg.getData();
             Hikar activity = activityRef.get();
-            if(activity != null) {
+            if (activity != null) {
                 if (data.containsKey("hfov")) {
+                    Log.d("hikar", "contains key, hfov");
                     float hfov = data.getFloat("hfov");
                     activity.hud.setHFOV(hfov);
                     activity.hud.invalidate();
                 } else if (data.containsKey("finishedData") &&
-                        data.getBoolean("finishedData")==true) {
+                        data.getBoolean("finishedData") == true) {
                     activity.hud.removeMessage();
                 }
             }
@@ -91,43 +91,43 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         super.onCreate(savedInstanceState);
         openGLViewStatusHandler = new OpenGLViewStatusHandler(this);
         glView = new OpenGLView(this, openGLViewStatusHandler);
-        hud=new HUD(this);
+        hud = new HUD(this);
         setContentView(glView);
-        addContentView(hud, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT));
+        addContentView(hud, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         sensorInput = new SensorInput(this);
         sensorInput.attach(this);
-        locationProcessor = new LocationProcessor(this,this,5000,10);
+        locationProcessor = new LocationProcessor(this, this, 5000, 10);
         glView.setOnTouchListener(new PinchListener(this));
 
         tilingProjID = "";
 
         demType = OsmDemIntegrator.HGT_OSGB_LFP;
-        trans = new TileDisplayProjectionTransformation ( null, null );
+        trans = new TileDisplayProjectionTransformation(null, null);
         lfpUrl = DEFAULT_LFP_URL;
         srtmUrl = DEFAULT_SRTM_URL;
         osmUrl = DEFAULT_OSM_URL;
         lastLon = -181;
         lastLat = -91;
 
-      // setLocation(-0.72, 51.05, true);
+        // setLocation(-0.72, 51.05, true);
 
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if(prefs != null) {
+        if (prefs != null) {
             orientationAdjustment = prefs.getFloat("orientationAdjustment", 0.0f);
             hud.changeOrientationAdjustment(orientationAdjustment);
         }
         Intent intent = new Intent(this, ModeSelector.class);
-        startActivityForResult (intent, 0);
+        startActivityForResult(intent, 0);
 
     }
-    
+
     public void onPause() {
         super.onPause();
-        if(userHasSelectedMode) {
+        if (userHasSelectedMode) {
             locationProcessor.stopUpdates();
             sensorInput.stop();
             glView.getRenderer().onPause();
@@ -136,12 +136,12 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public void onResume() {
         super.onResume();
-        if(userHasSelectedMode) {
+        if (userHasSelectedMode) {
             locationProcessor.startUpdates();
             processPrefs();
             glView.getRenderer().onResume();
             sensorInput.start();
-       //     setLocation(-0.72, 51.05, true);
+            //     setLocation(-0.72, 51.05, true);
         }
     }
 
@@ -158,16 +158,16 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public void processPrefs() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        float cameraHeight = Float.parseFloat(prefs.getString("prefCameraHeight","1.4"));
+        float cameraHeight = Float.parseFloat(prefs.getString("prefCameraHeight", "1.4"));
         setCameraHeight(cameraHeight);
 
         enableOrientationAdjustment = prefs.getBoolean("prefEnableOrientationAdjustment", false);
         hud.setOrientationAdjustmentEnabled(enableOrientationAdjustment);
 
-        String prefSrtmUrl=prefs.getString("prefSrtmUrl",DEFAULT_SRTM_URL),
-                prefLfpUrl=prefs.getString("prefLfpUrl", DEFAULT_LFP_URL),
-                prefOsmUrl=prefs.getString("prefOsmUrl", DEFAULT_OSM_URL);
-            boolean urlchange = setDataUrls(prefLfpUrl, prefSrtmUrl, prefOsmUrl);
+        String prefSrtmUrl = prefs.getString("prefSrtmUrl", DEFAULT_SRTM_URL),
+                prefLfpUrl = prefs.getString("prefLfpUrl", DEFAULT_LFP_URL),
+                prefOsmUrl = prefs.getString("prefOsmUrl", DEFAULT_OSM_URL);
+        boolean urlchange = setDataUrls(prefLfpUrl, prefSrtmUrl, prefOsmUrl);
 
         if (integrator == null || urlchange) {
             integrator = new OsmDemIntegrator(trans.getTilingProj(), demType, lfpUrl, srtmUrl, osmUrl);
@@ -190,29 +190,26 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
 
     public boolean onOptionsItemSelected(MenuItem item) {
-        boolean retcode=false;
+        boolean retcode = false;
 
 
-        switch(item.getItemId())
-        {
+        switch (item.getItemId()) {
 
             case R.id.menu_settings:
-                Intent i = new Intent(this,Preferences.class);
+                Intent i = new Intent(this, Preferences.class);
                 startActivity(i);
                 break;
 
 
             case R.id.menu_location:
-                LocationManager mgr = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+                LocationManager mgr = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                if(!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER))
-                {
+                if (!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     Intent intent = new Intent(this, LocationEntryActivity.class);
-                    startActivityForResult (intent, 1);
-                }
-                else
-                {
-                    DialogUtils.showDialog(this, "Can only manually specify location when GPS is off");
+                    startActivityForResult(intent, 1);
+                } else {
+                    DialogUtils.showDialog(this, "Can only manually specify location when GPS is off. " +
+                            "Please turn location off on your device's settings and restart the app.");
                 }
                 break;
 
@@ -226,8 +223,8 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         return retcode;
     }
 
-    public void onActivityResult (int requestCode, int resultCode, Intent intent) {
-        if(resultCode == Activity.RESULT_OK) {
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        if (resultCode == Activity.RESULT_OK) {
             Bundle info = null;
             switch (requestCode) {
                 case 0:
@@ -245,7 +242,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                     break;
             }
         } else if (resultCode == Activity.RESULT_CANCELED && requestCode == 0) {
-           finish();
+            finish();
         }
     }
 
@@ -254,9 +251,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         demType = mode;
         tilingProjID = tilingProjIDs[demType];
         Log.d("hikar", "Dem type=" + demType + " tiling Proj ID=" + tilingProjIDs[demType] +
-            " display projection=" + displayProjection);
+                " display projection=" + displayProjection);
         String displayProjectionFullId = "epsg:" + displayProjection;
-        if(!setDisplayProjectionID(displayProjectionFullId))
+        if (!setDisplayProjectionID(displayProjectionFullId))
             DialogUtils.showDialog(this, "Invalid projection " + displayProjectionFullId);
         else {
             Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
@@ -266,11 +263,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public boolean onKeyDown(int key, KeyEvent ev) {
 
-        boolean handled=false;
-        if(enableOrientationAdjustment) {
+        boolean handled = false;
+        if (enableOrientationAdjustment) {
 
-        
-            switch(key) {
+
+            switch (key) {
                 case KeyEvent.KEYCODE_VOLUME_DOWN:
                     orientationAdjustment -= 1.0f;
                     hud.changeOrientationAdjustment(-1.0f);
@@ -284,52 +281,51 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                     break;
             }
         }
-       
-        return handled ? true: super.onKeyDown(key, ev);
+
+        return handled ? true : super.onKeyDown(key, ev);
     }
-    
+
     public boolean onKeyUp(int key, KeyEvent ev) {
-        return key==KeyEvent.KEYCODE_VOLUME_DOWN || key==KeyEvent.KEYCODE_VOLUME_UP ? true: super.onKeyUp(key,ev);
+        return key == KeyEvent.KEYCODE_VOLUME_DOWN || key == KeyEvent.KEYCODE_VOLUME_UP ? true : super.onKeyUp(key, ev);
     }
 
 
     public void receiveLocation(Location loc) {
-        setLocation(loc.getLongitude(),loc.getLatitude(), true);
+        setLocation(loc.getLongitude(), loc.getLatitude(), true);
     }
 
-    public void setLocation(double lon, double lat)
-    {
-        setLocation (lon, lat, false);
+    public void setLocation(double lon, double lat) {
+        setLocation(lon, lat, false);
     }
 
     public void setLocation(double lon, double lat, boolean gpsLocation) {
-        if(gpsLocation) {
-            receivedLocation=true;
+        if (gpsLocation) {
+            receivedLocation = true;
             lastLon = lon;
             lastLat = lat;
         }
 
-        if(integrator!=null) {
+        if (integrator != null) {
 
             Point p = new Point(lon, lat);
             double height = integrator.getHeight(p);
             p.z = height;
 
             // We assume we won't travel far enough in one session for magnetic north to change much
-            if(field==null) {
-                field = new GeomagneticField ((float)lat, (float)lon,
+            if (field == null) {
+                field = new GeomagneticField((float) lat, (float) lon,
                         0, System.currentTimeMillis());
             }
 
             locDisplayProj = trans.getDisplayProj().project(p);
 
-            Log.d("hikar","location in display projection=" + locDisplayProj);
+            Log.d("hikar", "location in display projection=" + locDisplayProj);
             glView.getRenderer().setCameraLocation(p);
 
-            hud.setHeight((float)height);
+            hud.setHeight((float) height);
             hud.invalidate();
 
-            if(downloadDataTask==null || downloadDataTask.getStatus() == AsyncTask.Status.FINISHED) {
+            if (downloadDataTask == null || downloadDataTask.getStatus() == AsyncTask.Status.FINISHED) {
                 if (integrator.needNewData(p)) {
                     Log.d("hikar", "Starting download data task");
                     downloadDataTask = new DownloadDataTask(this, this,
@@ -343,13 +339,14 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         }
     }
 
-    public void noGPS() { }
+    public void noGPS() {
+    }
 
     public void receiveData(DownloadDataTask.ReceivedData data, boolean sourceGPS) {
         Log.d("hikar", "received data: sourceGPS=" + sourceGPS);
-        if (data!=null){ // only show data if it's a gps location, not a manual entry
+        if (data != null) { // only show data if it's a gps location, not a manual entry
             Log.d("hikar", "data not null");
-            if(sourceGPS) {
+            if (sourceGPS) {
                 Log.d("hikar", "Calling setRenderData()");
                 glView.getRenderer().setRenderData(data);
 
@@ -359,9 +356,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         downloadDataTask = null;
 
         // 180215 Now the DEM has been loaded we can get an initial height (as long as we have a location)
-        if(receivedLocation) {
+        if (receivedLocation) {
             double height = integrator.getHeight(new Point(lastLon, lastLat));
-            hud.setHeight((float)height);
+            hud.setHeight((float) height);
             hud.invalidate();
             glView.getRenderer().setHeight(height);
         }
@@ -370,9 +367,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     public void receiveSensorInput(float[] glR) {
         float[] orientation = new float[3];
 
-        float magNorth = field==null ? 0.0f : field.getDeclination(),
-                actualAdjustment = magNorth + (enableOrientationAdjustment? orientationAdjustment:0);
-        Matrix.rotateM (glR, 0, actualAdjustment, 0.0f, 0.0f, 1.0f);
+        float magNorth = field == null ? 0.0f : field.getDeclination(),
+                actualAdjustment = magNorth + (enableOrientationAdjustment ? orientationAdjustment : 0);
+        Matrix.rotateM(glR, 0, actualAdjustment, 0.0f, 0.0f, 1.0f);
 
         SensorManager.getOrientation(glR, orientation);
 
@@ -382,11 +379,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     }
 
     public void onPinchIn() {
+        Log.d("hikar", "onPinchIn()");
         glView.getRenderer().changeHFOV(5.0f);
 
     }
 
     public void onPinchOut() {
+        Log.d("hikar", "onPinchOut()");
         glView.getRenderer().changeHFOV(-5.0f);
 
     }
@@ -399,12 +398,12 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
 
     public void setCameraHeight(float cameraHeight) {
-        android.util.Log.d("hikar","camera height=" + cameraHeight);
+        android.util.Log.d("hikar", "camera height=" + cameraHeight);
         glView.getRenderer().setCameraHeight(cameraHeight);
     }
 
 
-    public boolean setDisplayProjectionID (String displayProjectionID) {
+    public boolean setDisplayProjectionID(String displayProjectionID) {
         Proj4ProjectionFactory fac = new Proj4ProjectionFactory();
         try {
             Projection proj = fac.generate(displayProjectionID);
@@ -413,15 +412,15 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 glView.getRenderer().setProjectionTransformation(trans);
                 return true;
             }
-        }catch(Exception e) { // some invalid IDs try to load a non-existent file giving an exception
+        } catch (Exception e) { // some invalid IDs try to load a non-existent file giving an exception
             DialogUtils.showDialog(this, "Error loading projection: " + e.toString());
             return false;
         }
         return false;
     }
 
-    public boolean setDataUrls (String lfpUrl, String srtmUrl, String osmUrl) {
-        boolean change=!(this.lfpUrl.equals(lfpUrl)) || !(this.srtmUrl.equals(srtmUrl)) || !(this.osmUrl.equals(osmUrl));
+    public boolean setDataUrls(String lfpUrl, String srtmUrl, String osmUrl) {
+        boolean change = !(this.lfpUrl.equals(lfpUrl)) || !(this.srtmUrl.equals(srtmUrl)) || !(this.osmUrl.equals(osmUrl));
         this.lfpUrl = lfpUrl;
         this.srtmUrl = srtmUrl;
         this.osmUrl = osmUrl;
