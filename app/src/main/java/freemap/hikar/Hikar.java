@@ -390,12 +390,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     }
 
-    public void setHFOV(float hFov) {
-
-        hud.setHFOV(hFov);
-        hud.invalidate();
-    }
-
 
     public void setCameraHeight(float cameraHeight) {
         android.util.Log.d("hikar", "camera height=" + cameraHeight);

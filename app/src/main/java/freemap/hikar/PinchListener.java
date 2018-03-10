@@ -1,7 +1,5 @@
 package freemap.hikar;
 
-
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 

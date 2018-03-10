@@ -42,6 +42,7 @@ public class CameraCapturer implements SurfaceTexture.OnFrameAvailableListener {
         }
     }
 
+
     public void onFrameAvailable(SurfaceTexture st) {
         // This appears not to be necessary; SurfaceTexture.updateTexImage() on its own will suffice
         // the converse is not true: this without SurfaceTexture.updateTexImage() will not work

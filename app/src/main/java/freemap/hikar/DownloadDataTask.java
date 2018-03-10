@@ -1,6 +1,5 @@
 package freemap.hikar;
 
-import freemap.andromaps.DataCallbackTask;
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -13,7 +12,6 @@ import java.util.HashMap;
 
 import freemap.datasource.Tile;
 
-import freemap.datasource.FreemapDataset;
 
 public class DownloadDataTask extends AsyncTask<Point, String, Boolean> {
 

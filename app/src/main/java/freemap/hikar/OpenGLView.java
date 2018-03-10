@@ -32,11 +32,6 @@ public class OpenGLView extends GLSurfaceView {
 
     DataRenderer renderer;
 
-
-    public interface RenderedWayVisitor {
-        public void visit(RenderedWay rw);
-    }
-
     static class SetRenderTask extends AsyncTask<DownloadDataTask.ReceivedData, Void, Boolean> {
 
         WeakReference<DataRenderer> rendererRef;
@@ -400,12 +395,7 @@ public class OpenGLView extends GLSurfaceView {
                     renderedWays.add(new RenderedWay(w, 2.0f, trans));
                 }
             }
-            /*
-            if((nrw++ % 10) == 0)
-                Log.d("hikar","Adding rendered way for way with ID: " + w.getValue("osm_id"));
-            if(nrw<100 && out!=null)
-                out.println("Adding rendered way for way with ID: " + w.getValue("osm_id"));
-            */
+
         }
 
         // setRotation() removed as duplicates setOrientMtx()
@@ -424,43 +414,7 @@ public class OpenGLView extends GLSurfaceView {
         public void changeHFOV(float amount) {
             setHFOV(this.hFov + amount);
         }
-        /*
 
-        public float getHFOV()
-        {
-            return hFov;
-        }
-        
-        public void setCalibrate(boolean cal)
-        {
-            calibrate=cal;
-        }
-        
-        public boolean getCalibrate()
-        {
-            return calibrate;
-        }
-        
-        public void toggleCalibrate()
-        {
-            calibrate = !calibrate;
-        }
-        
-        public float[] getModelviewMtx()
-        {
-            return modelviewMtx;
-        }
-        
-        public float[] getPerspectiveMtx()
-        {
-            return perspectiveMtx;
-        }
-        
-        public GPUInterface getGPUInterface()
-        {
-            return gpuInterface;
-        }
-        */
 
         public void setCameraFrame(SurfaceTexture st) {
             cameraFeed = st;
@@ -470,13 +424,6 @@ public class OpenGLView extends GLSurfaceView {
             zDisp = cameraHeight;
         }
 
-        /*
-        public void operateOnRenderedWays(OpenGLView.RenderedWayVisitor visitor)
-        { 
-        	for (RenderedWay w: renderedWays)
-        		visitor.visit(w);
-        }
-        */
         public void setProjectionTransformation(TileDisplayProjectionTransformation trans) {
             this.trans = trans;
         }

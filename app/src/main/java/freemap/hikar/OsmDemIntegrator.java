@@ -236,23 +236,6 @@ public class OsmDemIntegrator {
         return -1;
     }
 
-    public void forceDownload(Point bottomLeft, Point topRight) throws Exception {
-        osm.forceDownload(bottomLeft, topRight);
-    }
-
-    public DEM getCurrentDEM() {
-        return (DEM) hgt.getData();
-    }
-
-
-    public FreemapDataset getCurrentOSMData() {
-        return (FreemapDataset) osm.getData();
-    }
-
-
-    public HGTTileDeliverer getDEM() {
-        return hgt;
-    }
 
     public HashMap<String, Tile> getCurrentOSMTiles() {
         return osmupdated;
