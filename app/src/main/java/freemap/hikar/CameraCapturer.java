@@ -5,7 +5,7 @@ import android.graphics.SurfaceTexture;
 
 import java.io.IOException;
 
-public class CameraCapturer implements SurfaceTexture.OnFrameAvailableListener {
+public class CameraCapturer {
 
     Camera camera;
     OpenGLView.DataRenderer glRenderer;
@@ -23,7 +23,6 @@ public class CameraCapturer implements SurfaceTexture.OnFrameAvailableListener {
 
     public void startPreview(SurfaceTexture surfaceTexture) throws IOException {
         camera.setPreviewTexture(surfaceTexture);
-        surfaceTexture.setOnFrameAvailableListener(this);
         camera.startPreview();
         Camera.Parameters params = camera.getParameters();
         android.util.Log.d("hikar", "hfov=" + params.getHorizontalViewAngle() +
@@ -42,12 +41,6 @@ public class CameraCapturer implements SurfaceTexture.OnFrameAvailableListener {
         }
     }
 
-
-    public void onFrameAvailable(SurfaceTexture st) {
-        // This appears not to be necessary; SurfaceTexture.updateTexImage() on its own will suffice
-        // the converse is not true: this without SurfaceTexture.updateTexImage() will not work
-        glRenderer.setCameraFrame(st);
-    }
 
     public float getHFOV() {
         if (camera != null) {
