@@ -353,6 +353,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 glView.getRenderer().setRenderData(data);
             } else {
                 locationProcessor.startUpdates();
+                hud.removeMessage();
             }
         }
 
