@@ -55,4 +55,8 @@ public class LocationProcessor implements LocationListener {
                 break;
         }
     }
+
+    public boolean isProviderEnabled() {
+        return mgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    }
 }

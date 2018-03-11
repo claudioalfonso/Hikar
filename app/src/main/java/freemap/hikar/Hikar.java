@@ -5,6 +5,8 @@ import freemap.data.Point;
 import freemap.data.Projection;
 import freemap.proj.Proj4ProjectionFactory;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.hardware.GeomagneticField;
 import android.hardware.SensorManager;
 import android.location.Location;
@@ -196,15 +198,25 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
 
             case R.id.menu_location:
-                LocationManager mgr = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                if (!mgr.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    Intent intent = new Intent(this, LocationEntryActivity.class);
-                    startActivityForResult(intent, 1);
-                } else {
-                    DialogUtils.showDialog(this, "Can only manually specify location when GPS is off. " +
-                            "Please turn location off on your device's settings and restart the app.");
+                if (downloadDataTask != null && downloadDataTask.getStatus() != AsyncTask.Status.FINISHED) {
+                    DialogUtils.showDialog(this, "Cannot manually download data while an automatic download "+
+                            "is in progress. Please wait until the download has completed.");
+                } else{
+                    if (locationProcessor.isProviderEnabled()) {
+                        locationProcessor.stopUpdates();
+                        new AlertDialog.Builder(this).setMessage("GPS updates will be stopped while " +
+                            "data is being downloaded and resumed afterwards.").
+                            setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface i, int which) {
+                                    startManualDownload();
+                                }
+                            }).show();
+                    } else {
+                        startManualDownload();
+                    }
                 }
+
                 break;
 
                 /*
@@ -215,6 +227,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         }
         return retcode;
+    }
+
+    public void startManualDownload() {
+        Intent intent = new Intent(this, LocationEntryActivity.class);
+        startActivityForResult(intent, 1);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -335,9 +352,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         if (data != null) { // only show data if it's a gps location, not a manual entry
 
             if (sourceGPS) {
-
                 glView.getRenderer().setRenderData(data);
-
+            } else {
+                locationProcessor.startUpdates();
             }
         }
 
