@@ -41,10 +41,6 @@ public class HUD extends View {
         this.height = height;
     }
 
-    public void setHFOV(float hfov) {
-        this.hfov = hfov;
-    }
-
     public void changeHFOV(float dHfov) { this.hfov += dHfov; }
 
     public void changeOrientationAdjustment(float diff) {

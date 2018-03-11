@@ -394,11 +394,6 @@ public class OpenGLView extends GLSurfaceView {
             setHFOV(this.hFov + amount);
         }
 
-
-        public void setCameraFrame(SurfaceTexture st) {
-            cameraFeed = st;
-        }
-
         public void setCameraHeight(float cameraHeight) {
             zDisp = cameraHeight;
         }

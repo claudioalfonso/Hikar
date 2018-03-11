@@ -29,11 +29,6 @@ public class CameraCapturer {
                 " vfov=" + params.getVerticalViewAngle());
     }
 
-    public void stopPreview() {
-        camera.stopPreview();
-        releaseCamera();
-    }
-
     public void releaseCamera() {
         if (camera != null) {
             camera.release();
