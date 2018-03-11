@@ -26,7 +26,7 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:27.0.2'
 
-    compile 'freemap:freemaplib:20180304'
+    compile 'freemap:freemaplib:20180311'
     compile 'freemap:freemaplibProj:20131013'
     compile 'com.jhlabs:javaproj:1.0.6-noawt-r3'
 

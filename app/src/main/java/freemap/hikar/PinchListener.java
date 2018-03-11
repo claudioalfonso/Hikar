@@ -30,9 +30,6 @@ public class PinchListener implements View.OnTouchListener {
         int action = ev.getAction() & MotionEvent.ACTION_MASK, ptrIdx;
 
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                ptrIdx = ev.getAction() >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-                break;
 
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (ev.getPointerCount() == 2) {

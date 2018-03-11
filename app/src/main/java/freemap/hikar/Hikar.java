@@ -21,11 +21,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.ViewGroup.LayoutParams;
 import android.view.MenuItem;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.KeyEvent;
-import android.location.LocationManager;
 import android.view.WindowManager;
 
 import java.lang.ref.WeakReference;
