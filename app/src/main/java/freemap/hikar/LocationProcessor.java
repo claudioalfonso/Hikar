@@ -11,7 +11,6 @@ public class LocationProcessor implements LocationListener {
 
     public interface Receiver {
         public void receiveLocation(Location loc);
-
         public void noGPS();
     }
 

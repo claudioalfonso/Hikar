@@ -37,16 +37,6 @@ public class GLRect {
         if (colour != null)
             gpu.setUniform4fv("uColour", colour);
         gpu.drawBufferedData(vertexBuffer, indexBuffer, 12, "aVertex");
-            /* old opengl es 1.0 code
-				gl.glColor4f(colour[0],colour[1],colour[2],colour[3]);
-				
-				gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-				gl.glVertexPointer(3,GL10.GL_FLOAT,0,vertexBuffer);
-				gl.glDrawElements(GL10.GL_TRIANGLES,indices.length,GL10.GL_UNSIGNED_SHORT,indexBuffer);
-				
-				gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-				gl.glDisable(GL10.GL_CULL_FACE);
-		    */
 
     }
 

@@ -15,8 +15,6 @@ import android.os.Message;
 
 import java.io.IOException;
 
-import android.util.Log;
-
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -26,7 +24,7 @@ import freemap.data.Point;
 import freemap.datasource.FreemapDataset;
 import freemap.jdem.DEM;
 import freemap.datasource.Tile;
-import freemap.data.IdentityProjection;
+
 
 public class OpenGLView extends GLSurfaceView {
 
@@ -49,11 +47,9 @@ public class OpenGLView extends GLSurfaceView {
                 renderer.nrw = 0;
                 renderer.loadingData = true;
 
-                Log.d("hikar", "setRenderData() task: doinBackground()");
-
 
                 if (d[0].dem != null) {
-                    Log.d("hikar", "dem is not null");
+
                     if (renderer.renderedDEMs == null) // do not clear out when we enter a new tile!
                         renderer.renderedDEMs = new HashMap<String, RenderedDEM>();
                     synchronized (renderer.renderedDEMs) {
@@ -75,24 +71,19 @@ public class OpenGLView extends GLSurfaceView {
                 if (renderer.renderedWays == null) // do not clear out when we enter a new tile!
                     renderer.renderedWays = new ArrayList<RenderedWay>();
                 if (d[0].osm != null) {
-                    Log.d("hikar", "osm tile is not null");
+
                     i = 0;
                     for (HashMap.Entry<String, Tile> entry : d[0].osm.entrySet()) {
-                        Log.d("hikar", "doing an entry tile...");
+
                         // We don't want to have to operate on a tile we've already dealt with
                         if (renderer.receivedDatasets.get(entry.getKey()) == null) {
-                            Log.d("hikar", "Doing OSM tile: " + i + " key=" + entry.getKey());
+
                             FreemapDataset curOSM = (FreemapDataset) entry.getValue().data;
-                            //Log.d("hikar", "Rendered FreemapDataset:"  +curOSM);
-                            Log.d("hikar", "putting osm dataset");
                             renderer.receivedDatasets.put(entry.getKey(), curOSM);
-                            Log.d("hikar", "Operating on ways...");
                             curOSM.operateOnWays(renderer);
-                            Log.d("hikar", "number of rendered ways now: " + renderer.renderedWays.size());
-                        } else
-                            Log.d("hikar", "Already loaded in tile " + i + " key=" + entry.getKey());
+
+                        }
                     }
-                    Log.d("hikar", "done all entry tiles...");
 
                 }
 
@@ -292,7 +283,6 @@ public class OpenGLView extends GLSurfaceView {
                 }
 
                 if (renderedWays.size() > 0) {
-                    //     Log.d("hikar", "rendered ways size: " + renderedWays.size());
 
 
                     // NOTE! The result matrix must not refer to the same array in memory as either
@@ -308,22 +298,20 @@ public class OpenGLView extends GLSurfaceView {
                     gpuInterface.sendMatrix(modelviewMtx, "uMvMtx");
                     gpuInterface.sendMatrix(perspectiveMtx, "uPerspMtx");
 
-                    // Log.d("hikar", "about to draw rendered ways... cameraPos=" +cameraPos.x+ " "+ cameraPos.y +" " +cameraPos.z);
+
                     synchronized (renderedWays) {
                         int rWayCount = 0, drawnCount = 0;
                         double avDist = 0.0;
                         for (RenderedWay rWay : renderedWays) {
                             rWayCount++;
                             avDist += rWay.distanceTo(cameraPos);
-                            // Log.d("hikar","isDisplayed()=" + rWay.isDisplayed() + "distance = " + rWay.distanceTo(cameraPos));
+
                             if (rWay.isDisplayed() && rWay.distanceTo(cameraPos) <= farPlane) {
-                                //  Log.d("hikar", "drawing a rendered way");
                                 rWay.draw(gpuInterface);
                                 drawnCount++;
                             }
                         }
                         avDist /= rWayCount;
-                        //    Log.d("hikar", "rWayCount=" + rWayCount+ " drawnCouint=" + drawnCount +"avDist=" + avDist);
                     }
 
                 }
@@ -355,7 +343,6 @@ public class OpenGLView extends GLSurfaceView {
                 try {
                     cameraCapturer.startPreview(cameraFeed);
                 } catch (IOException e) {
-                    Log.e("hikar", "Error getting camera preview: " + e);
                     cameraCapturer.releaseCamera();
                 }
             }
@@ -366,9 +353,8 @@ public class OpenGLView extends GLSurfaceView {
         }
 
         public void setRenderData(DownloadDataTask.ReceivedData data) {
-            Log.d("hikar", "setRenderData() starting");
 
-            Log.d("hikar", "executing task...");
+
             if (trans != null) {
 
                 SetRenderTask setRenderDataTask = new SetRenderTask(this);
@@ -379,7 +365,6 @@ public class OpenGLView extends GLSurfaceView {
         public void setCameraLocation(Point unprojected) {
             if (trans != null) {
                 cameraPos = trans.lonLatToDisplay(unprojected);
-                Log.d("hikar", "****CAMERA POS : " + cameraPos + "****");
             }
         }
 
@@ -391,7 +376,6 @@ public class OpenGLView extends GLSurfaceView {
 
             synchronized (renderedWays) {
                 if (trans != null) {
-                    //     Log.d("hikar", "adding a rendered way");
                     renderedWays.add(new RenderedWay(w, 2.0f, trans));
                 }
             }

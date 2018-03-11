@@ -103,10 +103,6 @@ public class OsmDemIntegrator {
         if (!cacheDir.exists())
             cacheDir.mkdirs();
 
-        Log.d("hikar", "OsmDemIntegrator: tilewidth=" + tileWidths[demType] + " tileheight=" +
-                tileHeights[demType] + " resolution=" + resolutions[demType] +
-                " endianness=" + endianness[demType] + " ptwidth=" + ptWidths[demType] +
-                " ptheight=" + ptHeights[demType] + " multiplier=" + multipliers[demType]);
 
         hgt = new HGTTileDeliverer("dem", demDataSource, new HGTDataInterpreter(
                 ptWidths[demType], ptHeights[demType], resolutions[demType],
@@ -199,17 +195,11 @@ public class OsmDemIntegrator {
 
 
         for (HashMap.Entry<String, Tile> e : osmupdated.entrySet()) {
-            Log.d("hikar", "retrieving for: " + e.getKey());
             if (hgtupdated.get(e.getKey()) != null && osmupdated.get(e.getKey()) != null)
             //&& !e.getValue().isCache)
             {
                 FreemapDataset d = (FreemapDataset) e.getValue().data;
                 DEM dem = (DEM) (hgtupdated.get(e.getKey()).data);
-
-                Log.d("hikar", "DEM for " + e.getKey() + "=" + dem);
-                if (d == null) {
-                    Log.d("hikar", "UNEXPECTED!!! FreemapDataset is null!!!");
-                }
                 d.applyDEM(dem);
 
                 // NOTE should this be commented out??? we presumably want to cache the projected, dem-applied data???
@@ -217,7 +207,6 @@ public class OsmDemIntegrator {
                 // osm.cacheByKey(d, e.getKey());
 
             } else {
-                android.util.Log.d("hikar", "osm: is cache, has dem already");
                 return false;// NW 290514 test wasn't here already just to try and trap this condition for testing
             }
         }

@@ -1,7 +1,6 @@
 package freemap.hikar;
 
 import android.graphics.Rect;
-import android.util.Log;
 import android.view.View;
 import android.graphics.Canvas;
 import android.graphics.Paint;

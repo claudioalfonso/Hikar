@@ -74,7 +74,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             Hikar activity = activityRef.get();
             if (activity != null) {
                 if (data.containsKey("hfov")) {
-                    Log.d("hikar", "contains key, hfov");
                     float hfov = data.getFloat("hfov");
                     activity.hud.setHFOV(hfov);
                     activity.hud.invalidate();
@@ -237,7 +236,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 case 1:
                     info = intent.getExtras();
                     double lon = info.getDouble("freemap.hikar.lon"), lat = info.getDouble("freemap.hikar.lat");
-                    android.util.Log.d("hikar", "setting locaton to " + lon + "," + lat);
                     setLocation(lon, lat);
                     break;
             }
@@ -250,8 +248,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         demType = mode;
         tilingProjID = tilingProjIDs[demType];
-        Log.d("hikar", "Dem type=" + demType + " tiling Proj ID=" + tilingProjIDs[demType] +
-                " display projection=" + displayProjection);
         String displayProjectionFullId = "epsg:" + displayProjection;
         if (!setDisplayProjectionID(displayProjectionFullId))
             DialogUtils.showDialog(this, "Invalid projection " + displayProjectionFullId);
@@ -319,7 +315,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
             locDisplayProj = trans.getDisplayProj().project(p);
 
-            Log.d("hikar", "location in display projection=" + locDisplayProj);
             glView.getRenderer().setCameraLocation(p);
 
             hud.setHeight((float) height);
@@ -327,7 +322,6 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
             if (downloadDataTask == null || downloadDataTask.getStatus() == AsyncTask.Status.FINISHED) {
                 if (integrator.needNewData(p)) {
-                    Log.d("hikar", "Starting download data task");
                     downloadDataTask = new DownloadDataTask(this, this,
                             hud, integrator, gpsLocation);
                     downloadDataTask.execute(p);
@@ -343,11 +337,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     }
 
     public void receiveData(DownloadDataTask.ReceivedData data, boolean sourceGPS) {
-        Log.d("hikar", "received data: sourceGPS=" + sourceGPS);
         if (data != null) { // only show data if it's a gps location, not a manual entry
-            Log.d("hikar", "data not null");
+
             if (sourceGPS) {
-                Log.d("hikar", "Calling setRenderData()");
+
                 glView.getRenderer().setRenderData(data);
 
             }
@@ -379,20 +372,15 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     }
 
     public void onPinchIn() {
-        Log.d("hikar", "onPinchIn()");
         glView.getRenderer().changeHFOV(5.0f);
-
     }
 
     public void onPinchOut() {
-        Log.d("hikar", "onPinchOut()");
         glView.getRenderer().changeHFOV(-5.0f);
-
     }
 
 
     public void setCameraHeight(float cameraHeight) {
-        android.util.Log.d("hikar", "camera height=" + cameraHeight);
         glView.getRenderer().setCameraHeight(cameraHeight);
     }
 
