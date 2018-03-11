@@ -41,6 +41,9 @@
         <activity android:name="freemap.hikar.ModeSelector"
             android:label="@string/app_name"
             android:screenOrientation="portrait" />
+        <activity android:name="freemap.hikar.UserGuide"
+            android:label="@string/userguide"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

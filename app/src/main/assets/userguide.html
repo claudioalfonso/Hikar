@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hikar - OpenStreetMap Augmented Reality for Walkers and Hikers</title>
+</head>
+<body>
+<h1>Hikar - Augmented Reality for Walkers and Hikers</h1>
+<hr />
+<div id='content'>
+    <p>
+        Hikar
+        (see <a href='https://github.com/nickw1/Freemap/tree/master/java/hikar'>
+        github repository</a>) is an augmented reality app for Android (4.1+) which
+        overlays OpenStreetMap ways on the device's camera feed. Its aim is to help navigation for walkers/hikers
+        (hence the name) and other outdoor users. For example,
+        imagine you are entering a large field and it's not clear where the exit is.
+        Hikar will overlay the course of the footpath on your phone's camera feed
+        allowing you to navigate across the field. Or, you're at a junction of paths
+        and it's not clear which is the correct way. Again, Hikar will indicate which
+        path is correct by overlaying the course of the path on the camera
+        feed. Or, you're having to make your way across a pathless moor. Again,
+        Hikar will show you the way.</p>
+    <p>The colour scheme used is (referring to the highway tag):</p>
+    <ul>
+        <li>green = footway</li>
+        <li>brown = bridleway or anything with designation=public_bridleway</li>
+        <li>red = byway</li>
+        <li>orange = track</li>
+        <li>blue = cycleway</li>
+        <li>white = road, or anything else</li>
+    </ul>
+
+    <h2>Using Hikar</h2>
+    <p>When Hikar starts, choose your mode (UK or International, see below).
+        Data will then be downloaded from the Freemap server (or from the device
+        storage; once downloaded, data is cached on the device). If the download
+        fails (e.g. no network connection), it will try again shortly.
+        You can also pre-download data for a certain area before you go out (to avoid
+        relying on poor network connectivity in the countryside); to
+        do this select the "Download data at a given location" menu option and enter
+        the latitude and longitude of where you are going. A 30x30km area containing
+        this latitude and longitude will be downloaded.</p>
+
+    <p>Hikar will automatically work out the horizontal field of view of your
+        camera and your device's compass. However if these are inaccurate you may
+        change them as follows:
+    <ul>
+        <li>To change the field of view, pinch the screen in and out. The
+            new field of view will appear on the display.</li>
+        <li>To adjust the compass, press the up and down volume control. Note
+            that you have to turn this on in the Settings; it will not work by
+            default (this is to avoid the compass being adjusted if you are trying
+            to use the volume controls for something else).</li>
+    </ul>
+    </p>
+
+
+    <h2>Current status</h2>
+
+    <p>Hikar basically works at the moment, with acceptable performance on a Samsung Galaxy SIII, a Nexus 5, and a Nexus 7,
+        though is not optimised for densely-mapped urban areas and may well crash in
+        very large cities (on a SIII, for instance, the then-current version was stable in Southampton but crashed in Birmingham at
+        the time of SOTM 2013). Seeing as it is geared at countryside users I do not consider this a massive problem. Currently, however,
+        Hikar can be considered a prototype rather than a polished end-product. The main issues at
+        the moment are:
+    </p>
+    <ul>
+        <li>Uses a lot of battery power - perhaps inevitable for this kind of app.
+            Therefore, only use it when you need to and ensure your battery is fully
+            charged before setting out.</li>
+        <li>GPS inaccuracy leading to the OSM way being slightly
+            offset from its true position</li>
+        <li>Difficulty in aligning OSM data with the camera feed when climbing hills due to the difficulty of holding the device steady</li>
+        <li>Occasional compass inaccuracies. On the SIII, for instance,
+            the compass appears to be stable, but slightly offset from where it should be.
+            I think this is simply down to
+            inherent inaccuracies in smartphone compass hardware. To counter this you can
+            now offset the bearing using the volume keys, as described above; thanks to
+            <a href='http://www.showmehills.com'>ShowMeHills</a> for inspiration!
+            (Note that this is a setting which is off by default, you have to turn it on)
+        </li>
+        <li>Rendering needs improvement and some debugging; some odd artefacts overlaying the OSM data on the (near-transparent) height data, particularly noticeable when SRTM data is used rather than OS LandForm PANORAMA.</li>
+        <li>Possible out-of-memory issues when parsing the GeoJSON on low memory devices or when data is dense. In tests, JSON has so far given significantly faster loading/parsing times than either XML or a spatialite database, though if anyone does know of optimisation tricks for the latter, please let me know!</li>
+    </ul>
+
+
+    <h2>Obtaining the source code</h2>
+
+    <p>Source code is available
+        <a href='https://github.com/nickw1/Hikar'>here</a>.
+    </p>
+    <h2>Coverage</h2>
+
+    <p>
+
+        As the data is obtained from the Freemap server, coverage of Hikar as it stands is restricted to the areas covered by the Freemap server, namely England and
+        Wales. However in theory it is possible to set it up for your own country
+        if you are prepared to set up your own OSM and SRTM servers, or use someone
+        else's publicly-available servers - see below. If using someone else's server,
+        you must of course abide by their usage policy!
+    </p>
+
+    <h2>Setting up Hikar for your own country or region</h2>
+
+    <p>If you are interested in getting Hikar to work in your own country or region, you will need:
+    <ul>
+        <li> A server which serves GeoJSON OSM data by bounding box.</li>
+        <li>A server which serves SRTM height data</li>
+    </ul>
+    </p>
+
+    <p>
+        The <strong>OSM GeoJSON server</strong>
+        must take a "bbox" parameter of bounding box coordinates (in degrees, order w,s,e,n) and return the data as lat/lon in standard 4326.
+        The "bsvr.php" from the Freemap source repository
+        (<a href="https://github.com/nickw1/Freemap">here</a>)
+        will work as long as you have a standard OSM PostGIS database installed as well
+        as the entire Freemap server-side source code from the repository.
+        This script is in the directory 'fm/ws' within the repository. You will need to edit 'fm/ws/ws_defines.php' to use your correct PostGIS database and username.</p>
+
+    <p>
+        For the <strong>SRTM height data</strong>,
+        the easiest thing is to get hold of srtm2.php from the <a href="https://github.com/nickw1/Freemap">Freemap repository</a>
+        (ws/srtm2.php within the repository). As long as you have appropriate SRTM data installed on your server and you have a full installation of the Freemap server-side source code (srtm2.php needs a couple of library functions from the Freemap PHP library), this will work. You will need to edit the source code of srtm2.php so that HGTDIR refers to the directory holding the SRTM data. Again, srtm2.php takes a bounding box; it is capable of extracting bounding boxes within a .hgt file, rather than having to download the whole thing.</p>
+
+    <h3>Setting the hikar preferences to point to your server</h3>
+
+    <p>In Hikar itself, there are three preferences to set so that it talks to your server, not mine:
+    <ul>
+        <li>LandForm PANORAMA directory URL (location of LandForm PANORAMA files, irrelevant if you're not in the UK)</li>
+        <li>SRTM web service URL (location of the SRTM server, see above)</li>
+        <li>OSM GeoJSON web service URL (location of the OSM GeoJSON
+            server)</li>
+    </ul>
+
+    <h2>Changing the display projection</h2>
+
+    <p>
+        Hikar has two modes, UK and International. The former uses 27700 (OSGB) by default; the latter uses 3857 (Google Spherical Mercator) . However, theoretically, this can be changed to any projection supported by
+        <a href='http://trac.osgeo.org/proj4j/'>the Java version of proj.4</a>
+        (see GitHub repository of Android-compatible version
+        <a href='https://github.com/nickw1/javaproj'>here</a>).
+        So theoretically it should support other countries' national projections. Projections should be metres-based (eastings and northings measured in metres) as equal x, y and z dimensions are assumed by the OpenGL renderer and heights are in metres. So Google Spherical Mercator, while supported, will actually be a little inaccurate, away from the equator at least, as Google eastings are measured in metres at the equator. However in tests it's reasonably acceptable here in the UK.
+    </p>
+
+    <h2>How it works (briefly)</h2>
+
+    <p>Hikar uses the Android location and sensor APIs to obtain the location and orientation of the device, then loads OSM data (as GeoJSON, produced from a PostGIS database) and height data (either SRTM or Ordnance Survey LandForm PANORAMA) from the <a  href='http://www.free-map.org.uk'>Freemap</a> server. The data is then cached on the device to avoid network access next time you're in that area. The height data is used to position the OSM data in 3D, e.g. overlay a footpath on the slope of a hill so that it appears correctly. The sensor API is used to obtain an orientation matrix which is then used with OpenGL to display the OSM data overlaid on the device's camera feed.</p>
+
+    <p>Any questions, please
+        <a href="mailto:nickw4426@gmail.com">email me</a> (Nick Whitelegg)</p>
+
+    <p><strong>Note:</strong> Much of this text was taken from the
+        <a href='http://wiki.openstreetmap.org/wiki/Hikar'>Hikar OpenStreetMap
+            wiki page</a>.</p>
+
+</div>
+
+</body>
+</html>
+
+
+

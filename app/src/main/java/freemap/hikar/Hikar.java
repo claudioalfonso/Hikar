@@ -217,6 +217,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
                 break;
 
+            case R.id.userguide:
+                Intent intent = new Intent(this, UserGuide.class);
+                startActivity(intent);
+                break;
+
                 /*
             case R.id.fakegps:
                 setLocation(-0.72, 51.05, true);
