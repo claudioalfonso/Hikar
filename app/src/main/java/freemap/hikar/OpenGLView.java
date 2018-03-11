@@ -387,11 +387,6 @@ public class OpenGLView extends GLSurfaceView {
 
         public void setHFOV(float hFov) {
             this.hFov = hFov;
-            Message m = new Message();
-            Bundle bundle = new Bundle();
-            bundle.putFloat("hfov", hFov);
-            m.setData(bundle);
-            openGLViewStatusHandler.sendMessage(m);
 
         }
 

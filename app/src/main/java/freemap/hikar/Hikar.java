@@ -16,7 +16,6 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.ViewGroup.LayoutParams;
 import android.view.MenuItem;
@@ -73,11 +72,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             Bundle data = msg.getData();
             Hikar activity = activityRef.get();
             if (activity != null) {
-                if (data.containsKey("hfov")) {
-                    float hfov = data.getFloat("hfov");
-                    activity.hud.setHFOV(hfov);
-                    activity.hud.invalidate();
-                } else if (data.containsKey("finishedData") &&
+               if (data.containsKey("finishedData") &&
                         data.getBoolean("finishedData") == true) {
                     activity.hud.removeMessage();
                 }
@@ -373,10 +368,14 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public void onPinchIn() {
         glView.getRenderer().changeHFOV(5.0f);
+        hud.changeHFOV(5.0f);
+        hud.invalidate();
     }
 
     public void onPinchOut() {
         glView.getRenderer().changeHFOV(-5.0f);
+        hud.changeHFOV(-5.0f);
+        hud.invalidate();
     }
 
 
