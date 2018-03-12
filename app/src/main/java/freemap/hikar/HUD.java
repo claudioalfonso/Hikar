@@ -19,7 +19,7 @@ public class HUD extends View {
     public HUD(Context ctx) {
         super(ctx);
         paint = new Paint();
-        paint.setColor(Color.YELLOW);
+        paint.setColor(Color.RED);
         paint.setTextSize(48);
         msgPaint = new Paint();
         msgPaint.setColor(Color.WHITE);
