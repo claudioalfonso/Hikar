@@ -38,6 +38,7 @@ public class DownloadDataTask extends AsyncTask<Point, String, Boolean> {
     String errorMsg;
     Context ctx;
     String progressMsg;
+    boolean active;
 
     public DownloadDataTask(Context ctx, Receiver receiver, HUD hud, OsmDemIntegrator integrator, boolean sourceGPS) {
         this(ctx, receiver, hud, integrator, sourceGPS, "Loading data...");
@@ -60,6 +61,7 @@ public class DownloadDataTask extends AsyncTask<Point, String, Boolean> {
     }
 
     public Boolean doInBackground(Point... p) {
+        active = true;
         boolean status = false;
         errorMsg = "";
         try {
@@ -103,15 +105,22 @@ public class DownloadDataTask extends AsyncTask<Point, String, Boolean> {
 
     public void onPostExecute(Boolean status) {
 
-        if (status == false) {
-            DialogUtils.showDialog(ctx, "Some or all data was not loaded. Details: " + errorMsg +
-                    ". Hikar will try again shortly.");
-            hud.removeMessage();
+        if(active) {
+            if (status == false) {
+                DialogUtils.showDialog(ctx, "Some or all data was not loaded. Details: " + errorMsg +
+                        ". Hikar will try again shortly.");
+                hud.removeMessage();
+            }
+            receiver.receiveData((ReceivedData) data, sourceGPS);
         }
-        receiver.receiveData((ReceivedData) data, sourceGPS);
     }
 
     public boolean updateData(Point p) throws Exception {
         return integrator.update(p);
+    }
+
+    // allows existing downloads to be discarded if we change the source data URL
+    public void deactivate() {
+        active = false;
     }
 }
