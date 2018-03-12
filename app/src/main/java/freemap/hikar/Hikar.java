@@ -222,6 +222,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 startActivity(intent);
                 break;
 
+            case R.id.about:
+                DialogUtils.showDialog(this, "Hikar v0.1, (c) Nick Whitelegg 2013-18. " +
+                            "Licensed under the GPL, v3. Uses OpenStreetMap data, " +
+                            "copyright 2004-18 OpenStreetMap contributors, Open Database License. " +
+                            "Also uses Ordnance Survey LandForm PANORAMA height data, Crown Copyright.");
+                break;
+
                 /*
             case R.id.fakegps:
                 setLocation(-0.72, 51.05, true);
