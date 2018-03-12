@@ -165,7 +165,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         if (integrator == null || urlchange) {
             integrator = new OsmDemIntegrator(trans.getTilingProj(), demType, lfpUrl, srtmUrl, osmUrl);
-            downloadDataTask.deactivate(); // will prevent processing of any data currently being downloaded
+            if(downloadDataTask != null) {
+                downloadDataTask.deactivate(); // will prevent processing of any data currently being downloaded
+            }
             glView.getRenderer().deactivate(); // remove any rendered data which might be from another data source
 
             // If we received a location but weren't activated, now load data from the last location
