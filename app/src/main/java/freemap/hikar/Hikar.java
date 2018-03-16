@@ -75,7 +75,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                if (data.containsKey("finishedData") &&
                         data.getBoolean("finishedData") == true) {
                     activity.hud.removeMessage();
-                }
+                } else if (data.containsKey("hfov")) {
+                   activity.hud.setHFOV(data.getFloat("hfov"));
+               }
             }
         }
     }
@@ -226,7 +228,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 break;
 
             case R.id.about:
-                DialogUtils.showDialog(this, "Hikar v0.1, (c) Nick Whitelegg 2013-18. " +
+                DialogUtils.showDialog(this, "Hikar v0.1.1, (c) Nick Whitelegg 2013-18. " +
                             "Licensed under the GPL, v3. Uses OpenStreetMap data, " +
                             "copyright 2004-18 OpenStreetMap contributors, Open Database License. " +
                             "Also uses Ordnance Survey LandForm PANORAMA height data, Crown Copyright.");
@@ -261,7 +263,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 case 1:
                     info = intent.getExtras();
                     double lon = info.getDouble("freemap.hikar.lon"), lat = info.getDouble("freemap.hikar.lat");
-                    setLocation(lon, lat);
+                    if(!validLocation(lon,lat)) {
+                        DialogUtils.showDialog(this, "Invalid longitude and latitude. "+
+                                (tilingProjID.equals("epsg:27700") ? "If using OSGB as projection, "+
+                            "longitude must be between 7W and 2E and latitude between 49N and 59N.": ""));
+                    } else {
+                        setLocation(lon, lat);
+                    }
                     break;
             }
         } else if (resultCode == Activity.RESULT_CANCELED && requestCode == 0) {
@@ -326,7 +334,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             lastLat = lat;
         }
 
-        if (integrator != null) {
+        if (integrator != null && validLocation(lon,lat)) {
 
             Point p = new Point(lon, lat);
             double height = integrator.getHeight(p);
@@ -433,5 +441,10 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         this.srtmUrl = srtmUrl;
         this.osmUrl = osmUrl;
         return change;
+    }
+
+    private boolean validLocation(double lon, double lat) {
+        return !(lon>180 || lon<-180 || lat>90 || lat<-90 || (tilingProjID.equals("epsg:27700") &&
+            lon<-7 || lon>2 || lat<49 || lat>59));
     }
 }

@@ -338,7 +338,11 @@ public class OpenGLView extends GLSurfaceView {
                 float camHfov = cameraCapturer.getHFOV();
                 if (camHfov > 0.0f) {
                     setHFOV(camHfov);
-
+                    Message m = new Message();
+                    Bundle bundle = new Bundle();
+                    bundle.putFloat("hfov", camHfov);
+                    m.setData(bundle);
+                    renderer.openGLViewStatusHandler.sendMessage(m);
                 }
                 try {
                     cameraCapturer.startPreview(cameraFeed);

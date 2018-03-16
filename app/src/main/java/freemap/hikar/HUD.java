@@ -1,6 +1,9 @@
 package freemap.hikar;
 
+import android.app.Activity;
 import android.graphics.Rect;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -15,6 +18,7 @@ public class HUD extends View {
     String msg;
     Rect msgRect;
     boolean blankMessage, enableOrientationAdjustment;
+    DisplayMetrics displayMetrics;
 
     public HUD(Context ctx) {
         super(ctx);
@@ -28,6 +32,8 @@ public class HUD extends View {
         hfov = -1.0f;
         msgRect = new Rect();
         orientationAdjustment = 0.0f;
+        displayMetrics = new DisplayMetrics();
+        ((Activity)ctx).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
     }
 
     public void setOrientation(float[] orientation) {
@@ -42,6 +48,8 @@ public class HUD extends View {
     }
 
     public void changeHFOV(float dHfov) { this.hfov += dHfov; }
+
+    public void setHFOV(float hFov) { this.hfov = hFov;}
 
     public void changeOrientationAdjustment(float diff) {
         this.orientationAdjustment += diff;
@@ -85,7 +93,9 @@ public class HUD extends View {
     }
 
     public void setMessage(String msg) {
-        int width = getWidth() == 0 ? 800 : getWidth(), height = getHeight() == 0 ? 600 : getHeight();
+
+        int width = getWidth() == 0 ? displayMetrics.heightPixels : getWidth(), height = getHeight() == 0 ?
+                displayMetrics.widthPixels : getHeight();
         this.msg = msg;
         msgPaint.getTextBounds(msg, 0, msg.length(), msgRect);
         msgRect.offsetTo(width / 2 - msgRect.width() / 2, height / 2 - msgRect.height() / 2);
