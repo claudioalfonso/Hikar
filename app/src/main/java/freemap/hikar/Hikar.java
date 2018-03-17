@@ -228,7 +228,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 break;
 
             case R.id.about:
-                DialogUtils.showDialog(this, "Hikar v0.1.1, (c) Nick Whitelegg 2013-18. " +
+                DialogUtils.showDialog(this, "Hikar v0.2-SNAPSHOT, (c) Nick Whitelegg 2013-18. " +
                             "Licensed under the GPL, v3. Uses OpenStreetMap data, " +
                             "copyright 2004-18 OpenStreetMap contributors, Open Database License. " +
                             "Also uses Ordnance Survey LandForm PANORAMA height data, Crown Copyright.");

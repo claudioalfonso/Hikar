@@ -5,11 +5,11 @@ android {
     buildToolsVersion '27.0.3'
 
     defaultConfig {
-        applicationId "freemap.hikar"
+        applicationId "freemap.hikar.dev"
         minSdkVersion 16
         targetSdkVersion 22
-        versionCode 2
-        versionName "0.1.1"
+        versionCode 1
+        versionName "0.2-SNAPSHOT"
     }
     buildTypes {
         release {
@@ -29,6 +29,7 @@ dependencies {
     compile 'freemap:freemaplib:20180311'
     compile 'freemap:freemaplibProj:20131013'
     compile 'com.jhlabs:javaproj:1.0.6-noawt-r3'
+    compile 'com.graphhopper:graphhopper-core:0.10.0'
 
     compile project(":andromaps")
 }

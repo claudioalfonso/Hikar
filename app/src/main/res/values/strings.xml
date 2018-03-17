@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Hikar</string>
+    <string name="app_name">Hikar-SNAPSHOT</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_calibrate">Calibrate</string>
     <string name="menu_start">Start</string>
@@ -26,4 +26,6 @@
     <string name="mode">Mode</string>
     <string name="userguide">User guide</string>
     <string name="about">About Hikar</string>
+    <string name="defaultHeadingText">Default heading</string>
+	<string name="defaultContentText">Default content</string>
 </resources>
