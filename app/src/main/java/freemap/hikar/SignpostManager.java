@@ -23,9 +23,20 @@ import freemap.data.Algorithms;
 import freemap.data.POI;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
+import com.graphhopper.PathWrapper;
+import com.graphhopper.json.GHJson;
+import com.graphhopper.json.GHJsonFactory;
+import com.graphhopper.json.JsonFeatureConverter;
+import com.graphhopper.json.geo.JsonFeature;
+import com.graphhopper.json.geo.JsonFeatureCollection;
+import com.graphhopper.reader.osm.GraphHopperOSM;
+import com.graphhopper.storage.change.ChangeGraphHelper;
+
 import android.content.Context;
 import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
+
+import java.io.Reader;
 import java.util.ArrayList;
 import freemap.datasource.OSMTiles;
 import freemap.routing.County;
@@ -170,6 +181,8 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
   //      vf.setText("Loaded the graph", gh.toString());
         routerToPOI = new RouterToPOI(gh, this);
 
+
+
         // Process any junctions received while loading new county
         for (Point p: pendingJunctions)
             onJunction(p);
@@ -182,18 +195,17 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     }
 
     // poi is the POI we're routing to
-    public void pathCalculated(GHResponse response, POI poi)
+    public void pathCalculated(PathWrapper pw, POI poi)
     {
 
 
         // find the bearing of the first stage of the route and the total distance
-        /* this doesn't work in graphhopper 0.10
-        double d = response.getDistance();
 
-        routingDetails += "Dist to: " + poi.toString() + "=" + response.getInstructions().toString();
-        if(response.getPoints().size() >= 2) {
-            double nextLat = response.getPoints().getLat(1),
-                    nextLon = response.getPoints().getLon(1);
+        double d = pw.getDistance();
+        routingDetails += "Dist to: " + poi.toString() + "=" + pw.getInstructions().toString();
+        if(pw.getPoints().size() >= 2) {
+            double nextLat = pw.getPoints().getLat(1),
+                    nextLon = pw.getPoints().getLon(1);
 
             Point p = new Point (nextLon, nextLat);
 
@@ -206,7 +218,7 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
             arm.addDestination (new Destination (poi,d));
         }
         nextPOI();
-        */
+
     }
 
     public boolean hasDataset()

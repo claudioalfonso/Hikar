@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.AlgorithmOptions;
+import com.graphhopper.PathWrapper;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.PointList;
 
@@ -29,7 +29,7 @@ public class RouterToPOI {
 
     public interface Callback
     {
-        public void pathCalculated(GHResponse response, POI poi);
+        public void pathCalculated(PathWrapper pw, POI poi);
     }
 
     public RouterToPOI(GraphHopper gh, Callback callback)
@@ -62,19 +62,19 @@ public class RouterToPOI {
 
                 public void onPostExecute(GHResponse resp) {
 
-                    callback.pathCalculated(resp, poi);
+                    PathWrapper pw = resp.getBest();
+                    callback.pathCalculated(pw, poi);
 
-                    /* not working in GH 0.10
-                    String output = "Distance: " + resp.getDistance() + "\n";
-                    PointList list = resp.getPoints();
+
+                    String output = "Distance: " + pw.getDistance() + "\n";
+                    PointList list = pw.getPoints();
                     for (int i = 0; i < list.getSize(); i++) {
                         output += "Lat: "  + list.getLatitude(i) + " lon: " + list.getLongitude(i) +
                                 "\n";
                     }
-                    output += resp.getInstructions().toString();
+                    output += pw.getInstructions().toString();
 
-                    showText(output);
-                    */
+                    //showText(output);
                 }
             }
 
