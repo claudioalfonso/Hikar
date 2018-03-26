@@ -1,8 +1,11 @@
 package freemap.hikar;
 
+import freemap.andromaps.ConfigChangeSafeTask;
 import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 import freemap.data.Projection;
+import freemap.data.Way;
+import freemap.datasource.OSMTiles;
 import freemap.proj.Proj4ProjectionFactory;
 
 import android.app.AlertDialog;
@@ -13,6 +16,7 @@ import android.location.Location;
 import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
@@ -26,7 +30,13 @@ import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
+import freemap.routing.CountyManager;
+import freemap.routing.CountyTracker;
+import freemap.routing.JunctionManager;
+
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 
 public class Hikar extends AppCompatActivity implements SensorInput.SensorInputReceiver,
@@ -53,6 +63,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     boolean receivedLocation;
     OpenGLViewStatusHandler openGLViewStatusHandler;
     boolean enableOrientationAdjustment;
+
+    JunctionManager jManager;
+    SignpostManager sManager;
+    CountyManager cManager;
+
+    CountyTracker cTracker;
+    boolean loadingCounty;
 
     static String DEFAULT_LFP_URL = "http://www.free-map.org.uk/downloads/lfp/",
             DEFAULT_SRTM_URL = "http://www.free-map.org.uk/ws/srtm2.php",
@@ -119,6 +136,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         Intent intent = new Intent(this, ModeSelector.class);
         startActivityForResult(intent, 0);
 
+        jManager = new JunctionManager(20);
+        cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
+                "/hikar/countyData");
+
+        countyInit();
     }
 
     public void onPause() {
@@ -334,7 +356,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             lastLat = lat;
         }
 
-        if (integrator != null && validLocation(lon,lat)) {
+        if (integrator != null && validLocation(lon, lat)) {
 
             Point p = new Point(lon, lat);
             double height = integrator.getHeight(p);
@@ -363,8 +385,12 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                     downloadDataTask.execute(p);
                 }
             }
+
+            signpostUpdate(p);
         }
     }
+
+
 
     public void noGPS() {
     }
@@ -374,6 +400,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
             if (sourceGPS) {
                 glView.getRenderer().setRenderData(data);
+                setSignpostDataset(data);
             } else {
                 locationProcessor.startUpdates();
                 hud.removeMessage();
@@ -446,5 +473,110 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     private boolean validLocation(double lon, double lat) {
         return !(lon>180 || lon<-180 || lat>90 || lat<-90 || (tilingProjID.equals("epsg:27700") &&
             lon<-7 || lon>2 || lat<49 || lat>59));
+    }
+
+    // Signpost stuff begins here ...
+
+    private void indirectSetText(String heading, String msg) {
+        // TODO
+    }
+
+    private void showIndirectText() {
+        // TODO
+    }
+
+
+    private void countyInit() {
+        sManager = new SignpostManager(this);
+        ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(this)
+        {
+            public String doInBackground(Void... unused)
+            {
+                try
+                {
+                    cManager.downloadOrLoad("http://download.geofabrik.de/europe/great-britain/england/");
+                    return "OK";
+                }
+                catch(IOException e)
+                {
+                    return e.toString();
+                }
+            }
+
+            public void onPostExecute(String result)
+            {
+                super.onPostExecute(result);
+                if(result.equals("OK"))
+                {
+                    cTracker = new CountyTracker(cManager);
+                    cTracker.addCountyChangeListener(sManager);
+                }
+            }
+        };
+        countyLoaderTask.setDialogDetails("Loading...", "Loading county data...");
+        countyLoaderTask.execute();
+    }
+
+    private void signpostUpdate(Point p) {
+        new AsyncTask<Point, Void, Point>() {
+            public Point doInBackground(Point... pt) {
+                Point junction = null;
+
+                try
+                {
+                    loadingCounty = true;
+
+
+                    if (jManager.hasDataset()) {
+                        junction = jManager.getJunction(pt[0]);
+                        if (junction != null && sManager.hasDataset()) {
+                            sManager.onJunction(junction);
+                        }
+                        else
+                            indirectSetText("Can't call onJunction()", "Junction: " +
+                                    junction + " sManager has dataset?" + sManager.hasDataset());
+
+                    }
+                    else
+                    {
+                        indirectSetText("Can't call onJunction()", "jManager.hasDataset() returned false");
+                    }
+                }
+                catch(Exception e) {indirectSetText("Exception: ", "ViewFragment/Junction AsyncTask" +
+                        e.toString()); }
+                return junction;
+            }
+
+            public void onPostExecute(Point junction) {
+                showIndirectText();
+                if (junction != null) {
+                    ArrayList<Way> jWays = jManager.getStoredWays();
+                    String details = "";
+                    for (int i = 0; i < jWays.size(); i++) {
+                        details +=
+                                (i == 0 ? "" : ",") + (jWays.get(i).getValue("name") == null ?
+                                        jWays.get(i).getId() : jWays.get(i).getValue("name"))
+                                        + "(" + jWays.get(i).getValue("highway") + ")";
+                    }
+
+                    DialogUtils.showDialog(Hikar.this, junction.toString() + ":" + details +
+                            " onJunction() call time: "+ sManager.callTime);
+                }
+
+                loadingCounty = false;
+            }
+        }.execute(p);
+
+        // CountyTracker will be null if error loading the counties or not loaded yet
+        // This shouldn't go in an AsyncTask as it creates one itself to load the graph
+        if (cTracker != null)
+        {
+            cTracker.update(p);
+        }
+    }
+
+    private void setSignpostDataset(DownloadDataTask.ReceivedData data) {
+        jManager.setDataset(new OSMTiles(data.osm));
+        sManager.setDataset(new OSMTiles(data.osm));
     }
 }
