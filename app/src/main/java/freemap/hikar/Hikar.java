@@ -33,6 +33,7 @@ import android.view.WindowManager;
 import freemap.routing.CountyManager;
 import freemap.routing.CountyTracker;
 import freemap.routing.JunctionManager;
+import freemap.routing.RegionInfo;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -490,7 +491,8 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
             {
                 try
                 {
-                    cManager.downloadOrLoad("http://download.geofabrik.de/europe/great-britain/england/");
+                    RegionInfo info = new RegionInfo("europe", "great-britain", "england", null);
+                    cManager.downloadOrLoad(info, new String[] { "hampshire", "west-sussex"});
                     return "OK";
                 }
                 catch(IOException e)

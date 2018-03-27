@@ -29,6 +29,7 @@ import com.graphhopper.util.PointList;
 
 import freemap.andromaps.HTTPCommunicationTask;
 import freemap.andromaps.ConfigChangeSafeTask;
+import freemap.routing.RegionInfo;
 
 public class RoutingLoader implements HTTPCommunicationTask.Callback {
 

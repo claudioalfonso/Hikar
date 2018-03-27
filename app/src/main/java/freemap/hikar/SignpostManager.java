@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import freemap.datasource.OSMTiles;
 import freemap.routing.County;
 import freemap.routing.CountyTracker;
+import freemap.routing.RegionInfo;
 
 
 import java.text.DecimalFormat;

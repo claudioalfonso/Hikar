@@ -26,12 +26,11 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:27.0.2'
 
-    compile 'freemap:freemaplib:20180311'
+    compile 'freemap:freemaplib:20180327'
     compile 'freemap:freemaplibProj:20131013'
     compile 'com.jhlabs:javaproj:1.0.6-noawt-r3'
     compile 'com.graphhopper:graphhopper-core:0.10.0'
     compile 'com.graphhopper:graphhopper-reader-osm:0.10.0'
-    compile 'com.graphhopper:graphhopper-reader-json:0.10.0'
 
     compile project(":andromaps")
 }

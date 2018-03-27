@@ -2,16 +2,11 @@ package freemap.hikar;
 
 import freemap.andromaps.DownloadBinaryFilesTask;
 import freemap.andromaps.HTTPCommunicationTask;
+import freemap.routing.RegionInfo;
+
 import android.content.Context;
 import android.os.Environment;
-import java.io.IOException;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.File;
-import android.util.Log;
 
 /**
  * Created by nick on 05/05/15.
