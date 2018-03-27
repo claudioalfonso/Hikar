@@ -21,22 +21,15 @@ package freemap.hikar;
 
 import freemap.data.Algorithms;
 import freemap.data.POI;
-import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.PathWrapper;
-import com.graphhopper.json.GHJson;
-import com.graphhopper.json.GHJsonFactory;
-import com.graphhopper.json.JsonFeatureConverter;
-import com.graphhopper.json.geo.JsonFeature;
-import com.graphhopper.json.geo.JsonFeatureCollection;
-import com.graphhopper.reader.osm.GraphHopperOSM;
-import com.graphhopper.storage.change.ChangeGraphHelper;
+
 
 import android.content.Context;
 import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 
-import java.io.Reader;
+;
 import java.util.ArrayList;
 import freemap.datasource.OSMTiles;
 import freemap.routing.County;
@@ -44,7 +37,6 @@ import freemap.routing.CountyTracker;
 
 
 import java.text.DecimalFormat;
-import freemap.andromaps.DialogUtils;
 
 
 public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Callback,
@@ -64,14 +56,16 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     String routingDetails;
     DecimalFormat df;
     public long callTime;
+    RoutingLogger logger;
 
-    public SignpostManager(Context ctx)
+    public SignpostManager(Context ctx, RoutingLogger logger)
     {
         this.ctx = ctx;
         loader = new RoutingLoader(ctx, this);
         signposts = new ArrayList<Signpost>();
         pendingJunctions = new ArrayList<Point>();
         df=new DecimalFormat("#.##");
+        this.logger = logger;
     }
 
     public void setDataset(OSMTiles pois)
@@ -83,7 +77,8 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     {
         gh = null; // to indicate we're loading a county
         pendingJunctions.clear(); // clear any pending junctions for old county
-        loader.downloadOrLoad(county.getName());
+        // TODO for now this assumes England. Expand this once we have polygons for other areas
+        loader.downloadOrLoad(new RegionInfo("europe", "great-britain", "england",county.getName()));
 
     }
 
@@ -117,7 +112,7 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
 
 
                     routingDetails += " calling nextPOI()...";
-              //      vf.indirectSetText("Routing to POIs (begin)", routingDetails);
+                    logger.addLog("Routing to POIs (begin)", routingDetails);
                     nextPOI();
                 }
             } else // otherwise add it to pending junction list
@@ -125,13 +120,13 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
                 routingDetails += " Pending: " + curLoc;
                 pendingJunctions.add(curLoc);
 
-             //   vf.indirectSetText("onJunction()", routingDetails);
+                logger.addLog("onJunction()", routingDetails);
             }
 
         }
         catch(Exception e)
         {
-         //   vf.indirectSetText("SignpostManager/onJunction() Exception", e.toString());
+            logger.addLog("SignpostManager/onJunction() Exception", e.toString());
         }
 
     }
@@ -163,14 +158,14 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
 
             if(!doCalcPath)
                 p = (POI)poiIterator.next();
-           // vf.indirectSetText("Routing to POIs (part)", routingDetails);
-        }
+                logger.addLog("Routing to POIs (part)", routingDetails);
+            }
 
             if(doCalcPath)
                 routerToPOI.calcPath(curLoc, p);
             else {
                 routingDetails += " poi is null... end of POIs";
-              //  vf.indirectSetText("Routing to POIs", routingDetails);
+                logger.addLog("Routing to POIs", routingDetails);
             }
 
     }
@@ -178,7 +173,7 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     public void graphLoaded(GraphHopper gh)
     {
         this.gh = gh;
-  //      vf.setText("Loaded the graph", gh.toString());
+        logger.addLog("Loaded the graph", gh.toString());
         routerToPOI = new RouterToPOI(gh, this);
 
 

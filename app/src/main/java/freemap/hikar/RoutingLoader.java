@@ -21,10 +21,12 @@ import java.io.File;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
-import com.graphhopper.routing.AlgorithmOptions;
+import com.graphhopper.PathWrapper;
+import com.graphhopper.reader.osm.GraphHopperOSM;
 import com.graphhopper.util.Parameters;
-import com.graphhopper.util.PointList;
 import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.util.PointList;
+
 import freemap.andromaps.HTTPCommunicationTask;
 import freemap.andromaps.ConfigChangeSafeTask;
 
@@ -47,34 +49,35 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
         this.rmCallback = rmCallback;
     }
 
-        public void downloadOrLoad(String county)
-        {
-            if(exists(county))
-                loadGH(county);
-            else
-            {
-                GHZDownloader downloader =new GHZDownloader(ctx, this, county);
+    public void downloadOrLoad(RegionInfo regionInfo) {
+        if (exists(regionInfo))
+                loadGH(regionInfo);
+        else {
+                OSMDownloader downloader = new OSMDownloader(ctx, this, regionInfo);
                 downloader.execute();
-            }
         }
+    }
 
-        public boolean exists (String county) {
-            return new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
-                    "/gh/"+county+".osm-gh").isDirectory();
-        }
+    private boolean exists (RegionInfo regionInfo) {
+        return new File(regionInfo.getDirectoryStructure()).isDirectory();
+    }
 
-        public void loadGH(String county) {
-            ConfigChangeSafeTask<String, Void> task = new ConfigChangeSafeTask<String, Void>(ctx) {
+    private void loadGH(RegionInfo regionInfo) {
+        ConfigChangeSafeTask<RegionInfo, Void> task = new ConfigChangeSafeTask<RegionInfo, Void>(ctx) {
 
                 GraphHopper gh;
                 String error;
 
-                public String doInBackground(String... filename) {
+                public String doInBackground(RegionInfo... regionInfo) {
 
                     try {
-                        gh = new GraphHopper().forMobile();
+                        gh = new GraphHopperOSM().forMobile();
+                        gh.setDataReaderFile(Environment.getExternalStorageDirectory().getAbsolutePath()+"/" +
+                            regionInfo[0].getLocalOSMFile());
+                        gh.setGraphHopperLocation(Environment.getExternalStorageDirectory().getAbsolutePath()+"/gh/" +
+                            regionInfo[0].getDirectoryStructure());
                         gh.setEncodingManager(new EncodingManager("foot"));
-                        gh.load(filename[0]);
+                        gh.importOrLoad();
 
                     } catch (Exception e) {
                         error = e.toString();
@@ -91,14 +94,9 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                     }
                 }
             };
-            task.setDialogDetails("Loading", "Loading routing for " + county);
-            task.execute(Environment.getExternalStorageDirectory().getAbsolutePath() +
-                    "/gh/"+county+".osm-gh");
-        }
-
-
-
-
+        task.setDialogDetails("Loading", "Loading routing for " + regionInfo.getLocalOSMFile());
+        task.execute(regionInfo);
+    }
 
 
     public void calcPath (double fromLat, double fromLon, double toLat, double toLon)
@@ -119,17 +117,17 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                 }
 
                 public void onPostExecute (GHResponse resp) {
-                    /* not working in GH 0.10
-                    String output = "Distance: " + resp.getDistance() + "\n";
-                    PointList list = resp.getPoints();
+
+                    PathWrapper pw = resp.getBest();
+                    String output = "Distance: " + pw.getDistance() + "\n";
+                    PointList list = pw.getPoints();
                     for (int i = 0; i < list.getSize(); i++) {
-                        output += "Lat: "  + list.getLatitude(i) + " lon: " + list.getLongitude(i) +
+                        output += "Lat: " + list.getLatitude(i) + " lon: " + list.getLongitude(i) +
                                 "\n";
                     }
-                    output += resp.getInstructions().toString();
+                    output += pw.getInstructions().toString();
 
                     rmCallback.showText(output);
-                    */
                 }
             }.execute(fromLat, fromLon, toLat, toLon);
         }
@@ -154,18 +152,15 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
     }
     */
 
-    public void downloadFinished(int id, Object addData)
-    {
-        loadGH((String)addData); // addData = county
+    public void downloadFinished(int id, Object addData) {
+        loadGH((RegionInfo)addData); // addData = county
     }
 
-    public void downloadCancelled(int id)
-    {
+    public void downloadCancelled(int id) {
 
     }
 
-    public void downloadError(int id)
-    {
+    public void downloadError(int id) {
 
     }
 }

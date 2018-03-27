@@ -41,7 +41,7 @@ import java.util.ArrayList;
 
 public class Hikar extends AppCompatActivity implements SensorInput.SensorInputReceiver,
         LocationProcessor.Receiver, DownloadDataTask.Receiver,
-        PinchListener.Handler {
+        PinchListener.Handler, RoutingLogger {
     LocationProcessor locationProcessor;
     HUD hud;
     boolean userHasSelectedMode;
@@ -477,17 +477,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     // Signpost stuff begins here ...
 
-    private void indirectSetText(String heading, String msg) {
-        // TODO
-    }
-
-    private void showIndirectText() {
+    public void addLog(String heading, String msg) {
         // TODO
     }
 
 
     private void countyInit() {
-        sManager = new SignpostManager(this);
+        sManager = new SignpostManager(this, this);
         ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(this)
         {
             public String doInBackground(Void... unused)
@@ -533,22 +529,22 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                             sManager.onJunction(junction);
                         }
                         else
-                            indirectSetText("Can't call onJunction()", "Junction: " +
+                            addLog("Can't call onJunction()", "Junction: " +
                                     junction + " sManager has dataset?" + sManager.hasDataset());
 
                     }
                     else
                     {
-                        indirectSetText("Can't call onJunction()", "jManager.hasDataset() returned false");
+                        addLog("Can't call onJunction()", "jManager.hasDataset() returned false");
                     }
                 }
-                catch(Exception e) {indirectSetText("Exception: ", "ViewFragment/Junction AsyncTask" +
+                catch(Exception e) {addLog("Exception: ", "ViewFragment/Junction AsyncTask" +
                         e.toString()); }
                 return junction;
             }
 
             public void onPostExecute(Point junction) {
-                showIndirectText();
+
                 if (junction != null) {
                     ArrayList<Way> jWays = jManager.getStoredWays();
                     String details = "";
