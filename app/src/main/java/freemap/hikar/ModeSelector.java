@@ -9,7 +9,10 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.Spinner;
+
+import freemap.andromaps.DialogUtils;
 
 /**
  * Created by nick on 22/02/18.
@@ -20,6 +23,7 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
 
     int mode = 0;
     String[] displayProjectionSystems = {"27700", "3785"};
+    boolean routingTest = false;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,6 +33,9 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
         Spinner spinner = (Spinner) findViewById(R.id.spMode);
         spinner.setOnItemSelectedListener(this);
 
+        ((RadioButton)findViewById(R.id.radioNormal)).setOnClickListener(this);
+        ((RadioButton)findViewById(R.id.radioRoutingTest)).setOnClickListener(this);
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         mode = prefs.getInt("prefMode", 0);
         spinner.setSelection(mode, true);
@@ -36,7 +43,20 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
     }
 
     public void onClick(View view) {
-        sendResultBack();
+
+        switch(view.getId()) {
+            case R.id.btnOkModeEntry:
+                sendResultBack();
+                break;
+
+            case R.id.radioNormal:
+                routingTest = false;
+                break;
+
+            case R.id.radioRoutingTest:
+                routingTest = true;
+                break;
+        }
     }
 
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -59,6 +79,7 @@ public class ModeSelector extends AppCompatActivity implements View.OnClickListe
         Bundle bundle = new Bundle();
         bundle.putInt("freemap.hikar.mode", mode);
         bundle.putString("freemap.hikar.displayProjection", etDisplayProjection.getText().toString());
+        bundle.putBoolean("freemap.hikar.routingTest", routingTest);
         intent.putExtras(bundle);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = prefs.edit();

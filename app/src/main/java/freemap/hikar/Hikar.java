@@ -1,11 +1,8 @@
 package freemap.hikar;
 
-import freemap.andromaps.ConfigChangeSafeTask;
 import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 import freemap.data.Projection;
-import freemap.data.Way;
-import freemap.datasource.OSMTiles;
 import freemap.proj.Proj4ProjectionFactory;
 
 import android.app.AlertDialog;
@@ -16,28 +13,25 @@ import android.location.Location;
 import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.MenuItem;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.WindowManager;
+import android.widget.TextView;
 
-import freemap.routing.CountyManager;
-import freemap.routing.CountyTracker;
-import freemap.routing.JunctionManager;
-import freemap.routing.RegionInfo;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+
 
 
 public class Hikar extends AppCompatActivity implements SensorInput.SensorInputReceiver,
@@ -65,12 +59,13 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     OpenGLViewStatusHandler openGLViewStatusHandler;
     boolean enableOrientationAdjustment;
 
-    JunctionManager jManager;
-    SignpostManager sManager;
-    CountyManager cManager;
 
-    CountyTracker cTracker;
-    boolean loadingCounty;
+
+    boolean routingTest = false;
+    ViewGroup parent;
+    String curHeading, curDetails;
+
+    SignpostingManager signpostingManager;
 
     static String DEFAULT_LFP_URL = "http://www.free-map.org.uk/downloads/lfp/",
             DEFAULT_SRTM_URL = "http://www.free-map.org.uk/ws/srtm2.php",
@@ -137,19 +132,21 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         Intent intent = new Intent(this, ModeSelector.class);
         startActivityForResult(intent, 0);
 
-        jManager = new JunctionManager(20);
-        cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
-                "/hikar/countyData");
+        signpostingManager = new SignpostingManager(this);
 
-        countyInit();
+        parent = (ViewGroup) glView.getParent();
+
+
     }
 
     public void onPause() {
         super.onPause();
         if (userHasSelectedMode) {
             locationProcessor.stopUpdates();
-            sensorInput.stop();
-            glView.getRenderer().onPause();
+            if(!routingTest) {
+                sensorInput.stop();
+                glView.getRenderer().onPause();
+            }
         }
     }
 
@@ -158,8 +155,14 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
         if (userHasSelectedMode) {
             locationProcessor.startUpdates();
             processPrefs();
-            glView.getRenderer().onResume();
-            sensorInput.start();
+            swapViews();
+            if(!routingTest) {
+                glView.getRenderer().onResume();
+                sensorInput.start();
+            } else if (!signpostingManager.isInitialised()) {
+                signpostingManager.initialise();
+            }
+
             //     setLocation(-0.72, 51.05, true);
         }
     }
@@ -281,6 +284,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                     int mode = info.getInt("freemap.hikar.mode");
                     String displayProjection = info.getString("freemap.hikar.displayProjection");
                     setDEMSourceAndProjections(mode, displayProjection);
+                    routingTest = info.getBoolean("freemap.hikar.routingTest");
                     userHasSelectedMode = true;
                     break;
                 case 1:
@@ -387,7 +391,9 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 }
             }
 
-            signpostUpdate(p);
+            if(routingTest) {
+                signpostingManager.signpostUpdate(p);
+            }
         }
     }
 
@@ -401,7 +407,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
             if (sourceGPS) {
                 glView.getRenderer().setRenderData(data);
-                setSignpostDataset(data);
+                signpostingManager.setSignpostDataset(data);
             } else {
                 locationProcessor.startUpdates();
                 hud.removeMessage();
@@ -480,101 +486,41 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
     public void addLog(String heading, String msg) {
         // TODO
+        indirectSetText(heading, msg);
     }
 
 
-    private void countyInit() {
-        sManager = new SignpostManager(this, this);
-        ConfigChangeSafeTask<Void, Void> countyLoaderTask = new ConfigChangeSafeTask<Void, Void>(this)
-        {
-            public String doInBackground(Void... unused)
-            {
-                try
-                {
-                    RegionInfo info = new RegionInfo("europe", "great-britain", "england", null);
-                    cManager.downloadOrLoad(info, new String[] { "hampshire", "west-sussex"});
-                    return "OK";
-                }
-                catch(IOException e)
-                {
-                    return e.toString();
-                }
-            }
 
-            public void onPostExecute(String result)
-            {
-                super.onPostExecute(result);
-                if(result.equals("OK"))
-                {
-                    cTracker = new CountyTracker(cManager);
-                    cTracker.addCountyChangeListener(sManager);
-                }
-            }
-        };
-        countyLoaderTask.setDialogDetails("Loading...", "Loading county data...");
-        countyLoaderTask.execute();
-    }
+    private void swapViews() {
 
-    private void signpostUpdate(Point p) {
-        new AsyncTask<Point, Void, Point>() {
-            public Point doInBackground(Point... pt) {
-                Point junction = null;
-
-                try
-                {
-                    loadingCounty = true;
-
-
-                    if (jManager.hasDataset()) {
-                        junction = jManager.getJunction(pt[0]);
-                        if (junction != null && sManager.hasDataset()) {
-                            sManager.onJunction(junction);
-                        }
-                        else
-                            addLog("Can't call onJunction()", "Junction: " +
-                                    junction + " sManager has dataset?" + sManager.hasDataset());
-
-                    }
-                    else
-                    {
-                        addLog("Can't call onJunction()", "jManager.hasDataset() returned false");
-                    }
-                }
-                catch(Exception e) {addLog("Exception: ", "ViewFragment/Junction AsyncTask" +
-                        e.toString()); }
-                return junction;
-            }
-
-            public void onPostExecute(Point junction) {
-
-                if (junction != null) {
-                    ArrayList<Way> jWays = jManager.getStoredWays();
-                    String details = "";
-                    for (int i = 0; i < jWays.size(); i++) {
-                        details +=
-                                (i == 0 ? "" : ",") + (jWays.get(i).getValue("name") == null ?
-                                        jWays.get(i).getId() : jWays.get(i).getValue("name"))
-                                        + "(" + jWays.get(i).getValue("highway") + ")";
-                    }
-
-                    DialogUtils.showDialog(Hikar.this, junction.toString() + ":" + details +
-                            " onJunction() call time: "+ sManager.callTime);
-                }
-
-                loadingCounty = false;
-            }
-        }.execute(p);
-
-        // CountyTracker will be null if error loading the counties or not loaded yet
-        // This shouldn't go in an AsyncTask as it creates one itself to load the graph
-        if (cTracker != null)
-        {
-            cTracker.update(p);
+        parent.removeAllViews();
+        if(routingTest) {
+            View routetester = getLayoutInflater().inflate(R.layout.routetester, parent, false);
+            parent.addView(routetester);
+        } else {
+            parent.addView(glView);
         }
     }
 
-    private void setSignpostDataset(DownloadDataTask.ReceivedData data) {
-        jManager.setDataset(new OSMTiles(data.osm));
-        sManager.setDataset(new OSMTiles(data.osm));
+
+    private void setText (String heading, String details) {
+        TextView txtHeading = (TextView)findViewById(R.id.heading),
+            txtContent = (TextView)findViewById(R.id.content);
+
+        if(txtHeading!=null && txtContent!=null) {
+            ((TextView) findViewById(R.id.heading)).setText(heading);
+            ((TextView) findViewById(R.id.content)).setText(details);
+        }
+    }
+
+
+    private void indirectSetText (String heading, String details) {
+        curHeading = heading;
+        curDetails = details +"@" + System.currentTimeMillis()/1000;
+    }
+
+    void showIndirectText() {
+        setText(curHeading, curDetails +", showIndirectText() called@" + System.currentTimeMillis()/1000);
+
     }
 }

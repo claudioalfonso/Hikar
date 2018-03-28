@@ -28,4 +28,6 @@
     <string name="about">About Hikar</string>
     <string name="defaultHeadingText">Default heading</string>
 	<string name="defaultContentText">Default content</string>
+    <string name="ar">Normal View</string>
+	<string name="routing">Routing Test</string>
 </resources>
