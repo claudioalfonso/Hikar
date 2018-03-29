@@ -26,6 +26,8 @@ import com.graphhopper.PathWrapper;
 
 
 import android.content.Context;
+import android.util.Log;
+
 import freemap.andromaps.DialogUtils;
 import freemap.data.Point;
 
@@ -76,6 +78,8 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
 
     public void onCountyChange (County county)
     {
+        Log.d("hikar", "onCountyChange(): " + county.getName());
+        logger.addLog("County change", county.getName());
         gh = null; // to indicate we're loading a county
         pendingJunctions.clear(); // clear any pending junctions for old county
         // TODO for now this assumes England. Expand this once we have polygons for other areas

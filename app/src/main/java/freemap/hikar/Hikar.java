@@ -262,11 +262,11 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                             "Also uses Ordnance Survey LandForm PANORAMA height data, Crown Copyright.");
                 break;
 
-                /*
+
             case R.id.fakegps:
                 setLocation(-0.72, 51.05, true);
                 break;
-                */
+
 
         }
         return retcode;
@@ -397,6 +397,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
                 signpostingManager.signpostUpdate(p);
             }
         }
+
     }
 
 
@@ -519,7 +520,7 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         EditText etContent = (EditText)findViewById(R.id.content);
         if(etContent!=null) {
-            etContent.append(heading.toUpperCase()+"\n"+details+"\n\n");
+            etContent.append((heading==null ? "":heading.toUpperCase())+"\n"+details+"\n\n");
         }
     }
 

@@ -30,4 +30,5 @@
 	<string name="defaultContentText">Default content</string>
     <string name="ar">Normal View</string>
 	<string name="routing">Routing Test</string>
+    <string name="fakegps">Fake GPS location  (51.05, -0.72)</string>
 </resources>

@@ -132,6 +132,7 @@
     <orderEntry type="library" name="Gradle: com.android.support:support-annotations:27.0.2@jar" level="project" />
     <orderEntry type="library" name="Gradle: uk.me.jstott:jcoord:1.1-xni06-20170214@jar" level="project" />
     <orderEntry type="library" name="Gradle: artifacts:andromaps" level="project" />
+    <orderEntry type="library" name="Gradle: freemap:freemaplib:20180329@jar" level="project" />
     <orderEntry type="library" name="Gradle: com.android.support:support-fragment-27.0.2" level="project" />
     <orderEntry type="library" name="Gradle: com.google.protobuf:protobuf-java:3.4.0@jar" level="project" />
     <orderEntry type="library" name="Gradle: com.carrotsearch:hppc:0.7.2@jar" level="project" />
@@ -139,7 +140,6 @@
     <orderEntry type="library" name="Gradle: org.openstreetmap.osmosis:osmosis-osm-binary:0.46@jar" level="project" />
     <orderEntry type="library" name="Gradle: commons-codec:commons-codec:1.4@jar" level="project" />
     <orderEntry type="library" name="Gradle: com.android.support:appcompat-v7-27.0.2" level="project" />
-    <orderEntry type="library" name="Gradle: freemap:freemaplib:20180327@jar" level="project" />
     <orderEntry type="library" name="Gradle: org.slf4j:slf4j-api:1.7.25@jar" level="project" />
     <orderEntry type="library" name="Gradle: android.arch.lifecycle:runtime-1.0.3" level="project" />
     <orderEntry type="library" name="Gradle: com.fasterxml.jackson.core:jackson-annotations:2.8.4@jar" level="project" />

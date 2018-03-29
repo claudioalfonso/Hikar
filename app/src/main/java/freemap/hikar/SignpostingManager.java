@@ -5,6 +5,7 @@ package freemap.hikar;
 
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,6 +87,7 @@ public class SignpostingManager {
     // - if one is found, call the junction handler of the signpost manager
 
     public void signpostUpdate(Point p) {
+        Log.d("hikar", "signpostUpdate: " + p);
         new AsyncTask<Point, String, Point>() {
             public Point doInBackground(Point... pt) {
                 Point junction = null;

@@ -17,6 +17,8 @@ package freemap.hikar;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.content.Context;
+import android.util.Log;
+
 import java.io.File;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.GHRequest;
@@ -36,6 +38,7 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
     GraphHopper gh;
     Context ctx;
     RoutingLoader.Callback rmCallback;
+    ConfigChangeSafeTask<RegionInfo, String> createGraphTask;
 
 
     public interface Callback
@@ -52,9 +55,11 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
 
     public void downloadOrLoad(RegionInfo regionInfo) {
         if (osmFileExists(regionInfo)) {
+            Log.d("hikar", "OSM file exists, loading GH");
             loadGH(regionInfo);
         }
         else {
+            Log.d("hikar", "OSM file doesn't exist, downloading it...");
             OSMDownloader downloader = new OSMDownloader(ctx, this, regionInfo);
             downloader.execute();
         }
@@ -65,7 +70,8 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
     }
 
     private void loadGH(RegionInfo regionInfo) {
-        ConfigChangeSafeTask<RegionInfo, String> task = new ConfigChangeSafeTask<RegionInfo, String>(ctx) {
+        if(createGraphTask == null || createGraphTask.getStatus() != AsyncTask.Status.RUNNING) {
+            createGraphTask = new ConfigChangeSafeTask<RegionInfo, String>(ctx) {
 
                 GraphHopper gh;
                 String error;
@@ -73,17 +79,24 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                 public String doInBackground(RegionInfo... regionInfo) {
 
                     try {
+                        Log.d("hikar", "Creating GH object..");
                         publishProgress("Creating GraphHopper object...");
                         gh = new GraphHopperOSM().forMobile();
                         gh.setDataReaderFile(OSMDownloader.getLocalOSMFile(regionInfo[0]));
-                        gh.setGraphHopperLocation(Environment.getExternalStorageDirectory().getAbsolutePath()+"/gh/" +
-                            regionInfo[0].getDirectoryStructure());
+                        File ghDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/gh/" +
+                                regionInfo[0].getDirectoryStructure());
+                        if (!ghDir.exists()) {
+                            ghDir.mkdirs();
+                        }
+                        gh.setGraphHopperLocation(ghDir.getAbsolutePath());
                         gh.setEncodingManager(new EncodingManager("foot"));
+                        Log.d("hikar", "GH: importing the OSM file...");
                         publishProgress("GraphHopper: importing the OSM file...");
                         gh.importOrLoad();
 
                     } catch (Exception e) {
                         error = e.toString();
+                        Log.d("hikar", "Exception creating graph:" + error);
                         return error;
                     }
                     return "OK";
@@ -101,7 +114,11 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                     }
                 }
             };
-        task.setDialogDetails("Loading", "Loading routing for " + OSMDownloader.getLocalOSMFile(regionInfo));
+            createGraphTask.setDialogDetails("Loading", "Loading routing for " + OSMDownloader.getLocalOSMFile(regionInfo));
+            createGraphTask.execute(regionInfo);
+        } else {
+           rmCallback.showText("Can't load another graph as one is being loaded already");
+        }
     }
 
 
@@ -159,6 +176,8 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
     */
 
     public void downloadFinished(int id, Object addData) {
+        rmCallback.showText("Loaded OSM file. Now creating the graph");
+        Log.d("hikar","Loaded OSM file. Now creating the graph");
         loadGH((RegionInfo)addData); // addData = county
     }
 

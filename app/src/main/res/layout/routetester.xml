@@ -4,12 +4,9 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:id="@+id/heading"
-        android:textSize="12pt" android:text="@string/defaultHeadingText"/>
     <EditText android:layout_width="match_parent"
         android:layout_height="match_parent" android:scrollbars="vertical"
-        android:text="@string/defaultContentText"
+        android:text=""
         android:textSize="8pt"
         android:id="@+id/content"
         android:gravity="top"
