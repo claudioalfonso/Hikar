@@ -24,7 +24,7 @@ public class OSMDownloader extends DownloadBinaryFilesTask
 
     public OSMDownloader(Context ctx, HTTPCommunicationTask.Callback callback, RegionInfo regionInfo) {
 
-        super(ctx, new String[]{ regionInfo.getGeofabrik() }, new String[] { outputDir+regionInfo.getLocalOSMFile() },
+        super(ctx, new String[]{ regionInfo.getGeofabrik() }, new String[] { getLocalOSMFile(regionInfo) },
                 "Download files", callback, 0);
         File dir = new File(outputDir);
         if(!dir.exists()) {
@@ -32,5 +32,9 @@ public class OSMDownloader extends DownloadBinaryFilesTask
         }
         this.setDialogDetails("Downloading", "Downloading OSM data for routing...");
         this.setAdditionalData(regionInfo);
+    }
+
+    static String getLocalOSMFile(RegionInfo regionInfo) {
+        return outputDir+regionInfo.getLocalOSMFile();
     }
 }

@@ -185,9 +185,8 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
         pendingJunctions.clear();
     }
 
-    public void showText(String msg)
-    {
-        DialogUtils.showDialog (ctx, msg);
+    public void showText(String msg) {
+        logger.addLog("Message from routing loader", msg, true);
     }
 
     // poi is the POI we're routing to

@@ -35,7 +35,7 @@ public class SignpostingManager {
 
         jManager = new JunctionManager(20);
         cManager = new CountyManager(Environment.getExternalStorageDirectory().getAbsolutePath()+
-                "/hikar/countyData");
+                "/gh/countyData");
 
         sManager = new SignpostManager(activity, activity);
     }
@@ -76,7 +76,7 @@ public class SignpostingManager {
                 }
             }
         };
-        countyLoaderTask.setDialogDetails("Loading...", "Loading county data...");
+        countyLoaderTask.setDialogDetails("Loading...", "Loading county polygons...");
         countyLoaderTask.execute();
     }
 
@@ -86,7 +86,7 @@ public class SignpostingManager {
     // - if one is found, call the junction handler of the signpost manager
 
     public void signpostUpdate(Point p) {
-        new AsyncTask<Point, Void, Point>() {
+        new AsyncTask<Point, String, Point>() {
             public Point doInBackground(Point... pt) {
                 Point junction = null;
 
@@ -100,16 +100,20 @@ public class SignpostingManager {
                             sManager.onJunction(junction);
                         }
                         else {
-                            activity.addLog("Can't call onJunction()", "Junction: " +
+                            publishProgress("Can't call onJunction()", "Junction: " +
                                     junction + " sManager has dataset?" + sManager.hasDataset());
                         }
                     } else {
-                        activity.addLog("Can't call onJunction()", "jManager.hasDataset() returned false");
+                        publishProgress("Can't call onJunction()", "jManager.hasDataset() returned false");
                     }
                 }
-                catch(Exception e) {activity.addLog("Exception: ", "ViewFragment/Junction AsyncTask" +
+                catch(Exception e) {publishProgress("Exception: ", "signpostUpdate() AsyncTask" +
                         e.toString()); }
                 return junction;
+            }
+
+            public void onProgressUpdate(String... values) {
+                activity.addLog(values[0], values[1], true);
             }
 
             public void onPostExecute(Point junction) {
@@ -124,7 +128,7 @@ public class SignpostingManager {
                                         + "(" + jWays.get(i).getValue("highway") + ")";
                     }
 
-                    DialogUtils.showDialog(activity, junction.toString() + ":" + details +
+                    activity.addLog("Finished",junction.toString() + ":" + details +
                             " onJunction() call time: "+ sManager.callTime);
                 }
 

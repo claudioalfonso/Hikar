@@ -7,6 +7,7 @@ import freemap.proj.Proj4ProjectionFactory;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
 import android.hardware.GeomagneticField;
 import android.hardware.SensorManager;
 import android.location.Location;
@@ -27,6 +28,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.view.KeyEvent;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.TextView;
 
 
@@ -485,8 +487,15 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
     // Signpost stuff begins here ...
 
     public void addLog(String heading, String msg) {
-        // TODO
-        indirectSetText(heading, msg);
+        addLog(heading, msg, false);
+    }
+
+    public void addLog(String heading, String msg, boolean immediateUpdate) {
+        if(immediateUpdate) {
+            setText(heading, msg);
+        } else {
+            indirectSetText(heading, msg);
+        }
     }
 
 
@@ -495,21 +504,22 @@ public class Hikar extends AppCompatActivity implements SensorInput.SensorInputR
 
         parent.removeAllViews();
         if(routingTest) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             View routetester = getLayoutInflater().inflate(R.layout.routetester, parent, false);
             parent.addView(routetester);
+
         } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             parent.addView(glView);
         }
     }
 
 
     private void setText (String heading, String details) {
-        TextView txtHeading = (TextView)findViewById(R.id.heading),
-            txtContent = (TextView)findViewById(R.id.content);
 
-        if(txtHeading!=null && txtContent!=null) {
-            ((TextView) findViewById(R.id.heading)).setText(heading);
-            ((TextView) findViewById(R.id.content)).setText(details);
+        EditText etContent = (EditText)findViewById(R.id.content);
+        if(etContent!=null) {
+            etContent.append(heading.toUpperCase()+"\n"+details+"\n\n");
         }
     }
 

@@ -6,4 +6,5 @@ package freemap.hikar;
 
 public interface RoutingLogger {
     public void addLog (String title, String details);
+    public void addLog (String title, String details, boolean immediateUpdate);
 }

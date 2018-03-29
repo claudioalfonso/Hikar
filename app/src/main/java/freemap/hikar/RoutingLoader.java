@@ -51,20 +51,21 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
     }
 
     public void downloadOrLoad(RegionInfo regionInfo) {
-        if (exists(regionInfo))
-                loadGH(regionInfo);
+        if (osmFileExists(regionInfo)) {
+            loadGH(regionInfo);
+        }
         else {
-                OSMDownloader downloader = new OSMDownloader(ctx, this, regionInfo);
-                downloader.execute();
+            OSMDownloader downloader = new OSMDownloader(ctx, this, regionInfo);
+            downloader.execute();
         }
     }
 
-    private boolean exists (RegionInfo regionInfo) {
-        return new File(regionInfo.getDirectoryStructure()).isDirectory();
+    private boolean osmFileExists (RegionInfo regionInfo) {
+        return new File(OSMDownloader.getLocalOSMFile(regionInfo)).exists();
     }
 
     private void loadGH(RegionInfo regionInfo) {
-        ConfigChangeSafeTask<RegionInfo, Void> task = new ConfigChangeSafeTask<RegionInfo, Void>(ctx) {
+        ConfigChangeSafeTask<RegionInfo, String> task = new ConfigChangeSafeTask<RegionInfo, String>(ctx) {
 
                 GraphHopper gh;
                 String error;
@@ -72,12 +73,13 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                 public String doInBackground(RegionInfo... regionInfo) {
 
                     try {
+                        publishProgress("Creating GraphHopper object...");
                         gh = new GraphHopperOSM().forMobile();
-                        gh.setDataReaderFile(Environment.getExternalStorageDirectory().getAbsolutePath()+"/" +
-                            regionInfo[0].getLocalOSMFile());
+                        gh.setDataReaderFile(OSMDownloader.getLocalOSMFile(regionInfo[0]));
                         gh.setGraphHopperLocation(Environment.getExternalStorageDirectory().getAbsolutePath()+"/gh/" +
                             regionInfo[0].getDirectoryStructure());
                         gh.setEncodingManager(new EncodingManager("foot"));
+                        publishProgress("GraphHopper: importing the OSM file...");
                         gh.importOrLoad();
 
                     } catch (Exception e) {
@@ -85,6 +87,10 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                         return error;
                     }
                     return "OK";
+                }
+
+                public void onProgressUpdate(String... msg) {
+                    rmCallback.showText(msg[0]);
                 }
 
                 public void onPostExecute(String status) {
@@ -95,8 +101,7 @@ public class RoutingLoader implements HTTPCommunicationTask.Callback {
                     }
                 }
             };
-        task.setDialogDetails("Loading", "Loading routing for " + regionInfo.getLocalOSMFile());
-        task.execute(regionInfo);
+        task.setDialogDetails("Loading", "Loading routing for " + OSMDownloader.getLocalOSMFile(regionInfo));
     }
 
 

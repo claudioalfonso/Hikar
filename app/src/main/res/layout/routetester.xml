@@ -12,6 +12,7 @@
         android:text="@string/defaultContentText"
         android:textSize="8pt"
         android:id="@+id/content"
-        android:gravity="top"/>
+        android:gravity="top"
+        android:fontFamily="monospace"/>
 
 </LinearLayout>
