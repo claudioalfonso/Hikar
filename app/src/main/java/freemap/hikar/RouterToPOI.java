@@ -29,7 +29,7 @@ public class RouterToPOI {
 
     public interface Callback
     {
-        public void pathCalculated(PathWrapper pw, POI poi);
+        public void pathCalculated(PathWrapper pw, POI poi, String msg);
     }
 
     public RouterToPOI(GraphHopper gh, Callback callback)
@@ -42,8 +42,8 @@ public class RouterToPOI {
 
         if (gh != null) {
             class CalcPathTask extends AsyncTask<Double, Void, GHResponse> {
-
                 POI poi;
+                String exceptionMsg;
 
                 public CalcPathTask (POI poi)
                 {
@@ -52,29 +52,44 @@ public class RouterToPOI {
 
                 public GHResponse doInBackground(Double... coords) {
 
-                    GHRequest req = new GHRequest(coords[0], coords[1], coords[2], coords[3]).setAlgorithm
-                            (Parameters.Algorithms.DIJKSTRA_BI);
-                    req.setVehicle("foot");
-                    //req.getHints().put("instructions", "false");
-                    GHResponse resp = gh.route(req);
-                    return resp;
+                    try {
+                        GHRequest req = new GHRequest(coords[0], coords[1], coords[2], coords[3]).setAlgorithm
+                                (Parameters.Algorithms.DIJKSTRA_BI);
+                        req.setVehicle("foot");
+                        //req.getHints().put("instructions", "false");
+                        GHResponse resp = gh.route(req);
+                        return resp;
+                    } catch(Exception e) {
+                        exceptionMsg = e.toString();
+                        return null;
+                    }
                 }
 
                 public void onPostExecute(GHResponse resp) {
 
-                    PathWrapper pw = resp.getBest();
-                    callback.pathCalculated(pw, poi);
+                    String output;
+                    if(resp!=null) {
+                        PathWrapper pw = null;
+                        try {
+                            pw = resp.getBest();
 
 
-                    String output = "Distance: " + pw.getDistance() + "\n";
-                    PointList list = pw.getPoints();
-                    for (int i = 0; i < list.getSize(); i++) {
-                        output += "Lat: "  + list.getLatitude(i) + " lon: " + list.getLongitude(i) +
-                                "\n";
+                            output = "Distance: " + pw.getDistance() + "\n";
+                            PointList list = pw.getPoints();
+                            for (int i = 0; i < list.getSize(); i++) {
+                                output += "Lat: " + list.getLatitude(i) + " lon: " + list.getLongitude(i) +
+                                        "\n";
+                            }
+                            output += pw.getInstructions().toString();
+
+                        } catch(Exception e) {
+                            output = e.toString();
+                        }
+                        callback.pathCalculated(pw, poi, output);
+                    } else {
+                        output = exceptionMsg;
+                        callback.pathCalculated(null, poi, output);
                     }
-                    output += pw.getInstructions().toString();
-
-                    //showText(output);
                 }
             }
 

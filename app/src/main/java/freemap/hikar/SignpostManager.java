@@ -56,7 +56,6 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     ArrayList<Point> pendingJunctions; // pending junctions in case county being loaded
 
     OSMTiles.POIIterator poiIterator;
-    String routingDetails;
     DecimalFormat df;
     public long callTime;
     RoutingLogger logger;
@@ -73,7 +72,9 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
 
     public void setDataset(OSMTiles pois)
     {
+
         this.pois = pois;
+
     }
 
     public void onCountyChange (County county)
@@ -93,7 +94,7 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
         try {
 
             callTime = System.currentTimeMillis()/1000;
-            routingDetails = "onJunction():";
+            String routingDetails = "onJunction():";
             if (gh != null) {
                 curLoc = loc;
                 curSignpost = null;
@@ -101,78 +102,82 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
                 for (Signpost s : signposts) {
                     if (s.distanceTo(loc) < 50.0) {
                         curSignpost = s;
-                        routingDetails = " FOUND SIGNPOST: " + s;
+                        routingDetails = "\nFOUND SIGNPOST: " + s;
                         break;
                     }
                 }
 
+                routingDetails+="\nInitialising POI iterator";
                 poiIterator = pois.poiIterator();
+
 
                 if (curSignpost == null) {
                     curSignpost = new Signpost(loc);
                     signposts.add(curSignpost);
-                    routingDetails += "NEW SIGNPOST: " + curSignpost;
-
-
-
-
-                    routingDetails += " calling nextPOI()...";
+                    routingDetails += "\nNEW SIGNPOST: " + curSignpost;
+                    routingDetails += "\ncalling nextPOI()...";
                     logger.addLog("Routing to POIs (begin)", routingDetails);
                     nextPOI();
                 }
             } else // otherwise add it to pending junction list
             {
-                routingDetails += " Pending: " + curLoc;
-                pendingJunctions.add(curLoc);
-
-                logger.addLog("onJunction()", routingDetails);
+                /*
+                if(curLoc!=null) {
+                    routingDetails += "\nPending: " + curLoc;
+                    pendingJunctions.add(curLoc);
+                }
+                */
+                logger.addLog("onJunction(): no graph yet", routingDetails);
             }
 
         }
         catch(Exception e)
         {
-            logger.addLog("SignpostManager/onJunction() Exception", e.toString());
+            logger.addLog("onJunction() Exception", e.toString());
         }
 
     }
 
     public void nextPOI()
     {
-        boolean doCalcPath=false;
-        POI p = (POI)poiIterator.next();
-        routingDetails += " nextPOI():";
-        while(p!=null && doCalcPath==false) {
+        try {
+            boolean doCalcPath = false;
+            POI p = (POI) poiIterator.next();
+            String routingDetails = "\nnextPOI():";
+            while (p != null && doCalcPath == false) {
 
-            Point pt = p.getUnprojectedPoint();
+                Point pt = p.getUnprojectedPoint();
 
-            if((p.containsKey("amenity") && p.getValue("amenity").equals("pub")) ||
-                    p.containsKey("place") ||
-                    (p.containsKey("natural") && p.getValue("natural").equals("peak"))) {
+                if (p.containsKey("name") && (p.containsKey("amenity") && p.getValue("amenity").equals("pub")) ||
+                        p.containsKey("place") ||
+                        (p.containsKey("natural") && p.getValue("natural").equals("peak"))) {
+                    double dist = Algorithms.haversineDist(pt.x, pt.y, curLoc.x, curLoc.y);
+                    /*routingDetails += "Potential interesting POI: " + (p.getValue("name") == null ?
+                            "unnamed" : p.getValue("name")) + "=" + df.format(dist) + "\n";*/
 
-                double dist = Algorithms.haversineDist(pt.x, pt.y, curLoc.x, curLoc.y);
-
-                if(p.getValue("name")!=null)
-                    routingDetails += p.getValue("name") + "=" + df.format(dist) + ",";
-                if (Algorithms.haversineDist(pt.x, pt.y, curLoc.x, curLoc.y) <= 2000.0)
-                {
-                    doCalcPath=true;
+                    if (dist <= 5000.0) {
+                        doCalcPath = true;
+                    }
                 }
 
-
+                if (!doCalcPath) {
+                    p = (POI) poiIterator.next();
+                    logger.addLog("Routing to POIs (part)", routingDetails);
+                }
             }
 
-            if(!doCalcPath)
-                p = (POI)poiIterator.next();
-                logger.addLog("Routing to POIs (part)", routingDetails);
-            }
 
-            if(doCalcPath)
+            if (doCalcPath) {
+                routingDetails += "\nFinding a route to the POI:" + p.getValue("name");
+                logger.addLog("Routing to POIs", routingDetails);
                 routerToPOI.calcPath(curLoc, p);
-            else {
-                routingDetails += " poi is null... end of POIs";
+            } else {
+                routingDetails += "\npoi is null... end of POIs";
                 logger.addLog("Routing to POIs", routingDetails);
             }
-
+        } catch (Exception e) {
+            logger.addLog("nextPOI() Exception", e.toString());
+        }
     }
 
     public void graphLoaded(GraphHopper gh)
@@ -194,30 +199,37 @@ public class SignpostManager implements RoutingLoader.Callback, RouterToPOI.Call
     }
 
     // poi is the POI we're routing to
-    public void pathCalculated(PathWrapper pw, POI poi)
+    public void pathCalculated(PathWrapper pw, POI poi, String msg)
     {
+        if(pw==null) {
+            logger.addLog("error with routing", msg);
+            nextPOI();
+        } else {
 
+            // find the bearing of the first stage of the route and the total distance
+            try {
+                double d = pw.getDistance();
+                String routingDetails = msg + "Dist to: " + poi.toString() + "=" + pw.getInstructions().toString();
+                if (pw.getPoints().size() >= 2) {
+                    double nextLat = pw.getPoints().getLat(1),
+                            nextLon = pw.getPoints().getLon(1);
 
-        // find the bearing of the first stage of the route and the total distance
+                    Point p = new Point(nextLon, nextLat);
 
-        double d = pw.getDistance();
-        routingDetails += "Dist to: " + poi.toString() + "=" + pw.getInstructions().toString();
-        if(pw.getPoints().size() >= 2) {
-            double nextLat = pw.getPoints().getLat(1),
-                    nextLon = pw.getPoints().getLon(1);
-
-            Point p = new Point (nextLon, nextLat);
-
-            double bearing = p.bearingFrom (curLoc);
-            Arm arm;
-            if ((arm=curSignpost.getArmWithBearing(bearing)) == null){
-                arm = new Arm(bearing);
-                curSignpost.addArm(arm);
+                    double bearing = p.bearingFrom(curLoc);
+                    Arm arm;
+                    if ((arm = curSignpost.getArmWithBearing(bearing)) == null) {
+                        arm = new Arm(bearing);
+                        curSignpost.addArm(arm);
+                    }
+                    arm.addDestination(new Destination(poi, d));
+                }
+                logger.addLog("Route", routingDetails);
+                nextPOI();
+            } catch (Exception e) {
+                logger.addLog("pathCalculated() exception", e.toString());
             }
-            arm.addDestination (new Destination (poi,d));
         }
-        nextPOI();
-
     }
 
     public boolean hasDataset()

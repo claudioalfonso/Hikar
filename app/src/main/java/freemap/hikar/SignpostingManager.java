@@ -58,7 +58,7 @@ public class SignpostingManager {
                 try
                 {
                     RegionInfo info = new RegionInfo("europe", "great-britain", "england", null);
-                    cManager.downloadOrLoad(info, new String[] { "hampshire", "west-sussex", "wiltshire", "surrey"});
+                    cManager.downloadOrLoad(info, new String[] { "hampshire", "west-sussex", "wiltshire", "surrey", "cheshire", "dorset"});
                     return "Polys downloaded OK";
                 }
                 catch(IOException e)

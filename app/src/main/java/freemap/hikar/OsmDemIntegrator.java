@@ -88,6 +88,7 @@ public class OsmDemIntegrator {
                 tileHeights[demType]);
 
         formatter.selectWays("highway");
+        formatter.selectPOIs("place,natural,amenity");
         formatter.addKeyval("inUnits", tileUnits[demType]);
         if (tileUnits[demType].equals("degrees")) {
             formatter.setMicrodegToDeg(true); // 20180221 web service will receive degrees even though we are using microdegrees - more likely to be compatible with different servers
